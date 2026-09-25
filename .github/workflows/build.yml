@@ -1,0 +1,139 @@
+name: Build
+
+on:
+  # No paths-ignore, deliberately. This workflow's checks are REQUIRED on main,
+  # and GitHub never reports a check whose workflow was skipped by path
+  # filtering -- it stays Pending forever and the PR can never merge. A
+  # README-only change would be permanently unmergeable.
+  #
+  # The saving that was traded away is small: doc-only PRs are rare here
+  # (design/** was never in the ignore list, so design changes always ran), and
+  # each one now costs ~2 macOS runner minutes. Not being able to merge a typo
+  # fix costs more.
+  #
+  # If doc-only PRs ever become common, the fix is to move the path filter from
+  # this trigger onto the jobs (an `if:` guard), so the workflow still runs and
+  # still reports -- not to bring paths-ignore back.
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+# Supersede in-flight runs for the same ref: 32% of this repo's runs last month
+# were obsoleted by another push to the same branch within 10 minutes (amended
+# commits, force-pushes), and each one kept burning a macOS runner to produce a
+# result nobody would read. Never cancel on main — those runs are the record
+# that the merged state is green.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  build:
+    name: swift build
+    runs-on: macos-15
+    # A hung `swift test` otherwise runs to GitHub's 6-hour default at macOS
+    # rates (10x Linux). One already burned 134 minutes. This also makes the
+    # next hang DIAGNOSABLE: a cancelled job discards its logs, so we never
+    # learned which test wedged — a timed-out job fails and keeps them.
+    # Successful runs take ~2 minutes.
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show Swift version
+        run: swift --version
+
+      - name: QA log tripwire
+        # The QA page fails a unit row whose run leaves one line shape
+        # dominating the app log (scripts/qa/log_health.py, review
+        # 2026-09-04). The normaliser's contract and the page wiring are
+        # tested here so the tripwire itself cannot silently rot. Runs on
+        # this macOS job because the lint container has no python.
+        run: |
+          python3 scripts/qa/log_health.py --self-test
+          python3 -m unittest discover -s scripts/qa -p 'test_*.py' -v
+          # The notice packager decides what licence material ships in the app
+          # bundle; its failure cases are cheap to run and expensive to discover
+          # at release time (OSS-05). Fixture-only, so it needs no checkout.
+          python3 -m unittest discover -s scripts/build/tests -p 'test_*.py' -v
+
+      - name: Cache SwiftPM
+        uses: actions/cache@v4
+        with:
+          path: |
+            .build
+            ~/Library/Caches/org.swift.swiftpm
+          key: ${{ runner.os }}-spm-${{ hashFiles('Package.swift') }}
+          restore-keys: |
+            ${{ runner.os }}-spm-
+
+      - name: swift build
+        run: swift build -c release
+
+      - name: third-party notice inputs
+        # Validates the real mapping against the real checkouts, which exist
+        # only after the build above resolved them. This is what catches a pin
+        # bump that lands without a notice-mapping review (OSS-05); the
+        # fixture tests above cannot see that, since they never read a checkout.
+        run: python3 scripts/build/package-notices.py "$RUNNER_TEMP/notice-check" --check-only
+
+      # The 2026-07-28/29 hangs are understood: Sparkle booted inside xctest
+      # (via ModeStore.didSet -> Updater.shared) and its startup-error alert
+      # ran modal on the main thread ~1.5s after launch. Fixed at the source
+      # in Updater.init (never start Sparkle under XCTest). This watchdog is
+      # what found it -- two stack samples, same Sparkle frame both times --
+      # and stays as a canary: if `swift test` ever wedges again, the sample
+      # names the culprit instead of the job dying silently.
+      - name: swift test
+        run: |
+          swift test &
+          TEST_PID=$!
+          (
+            sleep 420
+            if kill -0 "$TEST_PID" 2>/dev/null; then
+              echo "::warning::swift test still running after 7m - sampling the hung process"
+              XCTEST_PID=$(pgrep -n xctest || true)
+              if [ -n "$XCTEST_PID" ]; then
+                /usr/bin/sample "$XCTEST_PID" 5 -file /dev/stdout || true
+              else
+                echo "no xctest process found; listing swift processes"
+                ps -Ao pid,etime,command | grep -i swift | grep -v grep || true
+              fi
+            fi
+          ) &
+          WATCHDOG_PID=$!
+          wait "$TEST_PID"
+          STATUS=$?
+          kill "$WATCHDOG_PID" 2>/dev/null || true
+          exit $STATUS
+
+      - name: log tripwire on the tests log
+        # What the suite just wrote to the app's own log (FileLog's
+        # reed-tests.log). A dominated log fails the job even with every
+        # case green; too small also fails here — a full run writes ~120
+        # lines (measured 2026-09-04), so fewer than 60 means the suite did
+        # not log at all, which is its own defect. Review 2026-09-04, round 2.
+        run: |
+          python3 scripts/qa/log_health.py --min-lines 60 "$HOME/Library/Application Support/Reed/reed-tests.log"
+
+  lint:
+    name: swiftlint
+    # Linux, not macOS: SwiftLint only parses source, and a macOS runner costs
+    # ~10x per minute. This job does ~11s of work but bills a full minute
+    # either way, so the runner choice was most of its cost. Verified to give
+    # byte-identical results on this codebase (0 violations, exit 0) before
+    # switching. Image pinned, not :latest — a new SwiftLint adding a rule
+    # should be a deliberate upgrade, not a surprise red build.
+    runs-on: ubuntu-latest
+    # Bounded for the same reason as the build job: once a check is required,
+    # a hung job blocks the PR until GitHub's 6-hour default expires. This one
+    # does ~17s of work.
+    timeout-minutes: 10
+    container: ghcr.io/realm/swiftlint:0.65.0
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: swiftlint --strict
+        # --strict turns warnings into errors so the job fails on any lint hit.
+        run: swiftlint lint --strict --reporter github-actions-logging

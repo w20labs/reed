@@ -1,0 +1,19 @@
+.build/
+.swiftpm/
+Package.resolved
+*.app
+*.dSYM
+*.xcodeproj
+*.zip
+.DS_Store
+Reed.dmg
+.sparkle-tools/
+appcast.xml
+mocks/
+rw.*.dmg
+.worktrees/
+voice-tests/
+
+# Local QA page results (scripts/qa) — never shipped
+docs/bench/qa/
+__pycache__/

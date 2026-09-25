@@ -1,0 +1,75 @@
+# SwiftLint config for Reed.
+# Lenient by design — flag real issues, don't fight legitimate Swift patterns.
+
+excluded:
+  - .build
+  - .swiftpm
+  - Tests
+  - docs/bench/archived
+
+# Disable rules that conflict with intentional patterns in this codebase.
+disabled_rules:
+  # We use `URL(string:)!` and `AVAudioFormat(...)!` for compile-time-known
+  # safe inputs; the alternative (lazy + guard) just adds noise.
+  - force_unwrapping
+  # AXUIElement bridge requires `as!` (CFTypeRef → AXUIElement); the docs
+  # confirm the type and CFGetTypeID is checked just above the cast.
+  - force_cast
+  # OSLog string interpolations get long; readability beats wrapping.
+  - line_length
+  # Trailing commas in multi-line literals are convention in much of the
+  # Swift ecosystem (Apple sample code, SPM manifests) — they reduce diff
+  # noise when adding/removing entries.
+  - trailing_comma
+  # Style preference: allow `do { … }\ncatch { … }` for compact two-liners.
+  - statement_position
+
+opt_in_rules:
+  - closure_spacing
+  - empty_count
+  - empty_string
+  - explicit_init
+  - first_where
+  - last_where
+  - redundant_nil_coalescing
+  - sorted_first_last
+  - toggle_bool
+
+# Analyzer rules require `swiftlint analyze` (needs SourceKit). Not run in
+# default lint pass, but documented here for when the analyzer is wired up.
+analyzer_rules:
+  - unused_import
+  - unused_declaration
+
+# Don't fail the build on warnings; only on real errors.
+function_body_length:
+  warning: 80
+  error: 150
+
+type_body_length:
+  warning: 300
+  error: 500
+
+file_length:
+  warning: 400
+  error: 800
+
+cyclomatic_complexity:
+  warning: 20
+  error: 30
+
+# Allow short identifiers where they're idiomatic (i, x, y, e, etc.).
+identifier_name:
+  min_length:
+    warning: 2
+    error: 1
+  excluded:
+    - i
+    - x
+    - y
+    - v
+    - id
+    - s   # error message string in switch bindings
+    - p   # pointer name in low-level audio loops
+
+reporter: "github-actions-logging"

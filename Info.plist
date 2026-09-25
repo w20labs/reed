@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>ATSApplicationFontsPath</key>
+	<string>Fonts</string>
+	<key>AptabaseAppKey</key>
+	<string></string>
+	<key>CFBundleDisplayName</key>
+	<string>Reed</string>
+	<key>CFBundleExecutable</key>
+	<string>Reed</string>
+	<key>CFBundleIconFile</key>
+	<string>Reed</string>
+	<key>CFBundleIdentifier</key>
+	<string>com.local.reed</string>
+	<key>CFBundleName</key>
+	<string>Reed</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>0.2.5</string>
+	<key>CFBundleVersion</key>
+	<string>0.2.5</string>
+	<key>LSMinimumSystemVersion</key>
+	<string>14.0</string>
+	<key>LSUIElement</key>
+	<true/>
+	<key>NSAppleEventsUsageDescription</key>
+	<string>Reed synthesizes keystrokes to paste transcribed text into the active app.</string>
+	<key>NSHighResolutionCapable</key>
+	<true/>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Reed needs microphone access to transcribe your dictation.</string>
+	<key>SUEnableAutomaticChecks</key>
+	<true/>
+	<key>SUFeedURL</key>
+	<string>https://reed-public-551270927645.s3.us-west-2.amazonaws.com/appcast.xml</string>
+	<key>SUPublicEDKey</key>
+	<string>Pyr39EfD4BgZBD58/Jg/iULaKVVH5kyw5WGdSFBM/Nc=</string>
+	<key>SentryDSN</key>
+	<string></string>
+</dict>
+</plist>

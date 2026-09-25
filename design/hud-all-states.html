@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Reed HUD — dark glass, all states (dark + light bg)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root{--ink:#1d1d1f;--slate:#6a6a70;--hair:#dcdcde;--paper:#f4f2ee;
+    --bg:rgba(34,36,42,0.62);--fg:rgba(255,255,255,0.94);--fg2:rgba(255,255,255,0.5);
+    --edge:rgba(255,255,255,0.14);--amber:#efa235;--red:#e5544a;--stroke:rgba(255,255,255,0.9);
+    --mono:"SF Mono",Menlo,ui-monospace,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,sans-serif;}
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--paper);color:var(--ink);
+    font-family:var(--sans);font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased;}
+  main{max-width:980px;margin:0 auto;padding:44px 28px 90px;}
+  .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--slate);margin-bottom:10px;}
+  h1{font-size:28px;font-weight:600;letter-spacing:-0.02em;margin:0 0 8px;}
+  h2{font-size:14px;font-weight:600;margin:32px 0 12px;font-family:var(--mono);letter-spacing:0.04em;text-transform:uppercase;color:var(--slate);}
+  p.lede{color:var(--slate);max-width:72ch;margin:0 0 8px;}
+
+  .stage{display:flex;border-radius:14px;overflow:hidden;border:1px solid var(--hair);}
+  .half{flex:1;padding:24px;min-height:96px;display:flex;align-items:center;}
+  .half.dark{background:radial-gradient(560px 260px at 25% -25%,#3c4a67 0,transparent 60%),linear-gradient(180deg,#232a3b,#171c28);}
+  .half.light{background:radial-gradient(560px 260px at 25% -25%,#ffffff 0,transparent 55%),linear-gradient(160deg,#e9e7e1,#d3d0c9);}
+  .row{display:flex;flex-wrap:wrap;gap:14px;align-items:center;}
+  .cell{display:flex;flex-direction:column;align-items:flex-start;gap:7px;}
+  .cap{font-family:var(--mono);font-size:9.5px;letter-spacing:0.05em;text-transform:uppercase;}
+  .half.dark .cap{color:rgba(255,255,255,0.4);}
+  .half.light .cap{color:rgba(0,0,0,0.4);}
+
+  /* ---------- dark-glass pill (identical over both backgrounds) ---------- */
+  .pill{display:inline-flex;align-items:center;gap:9px;padding:8px 13px;border-radius:13px;
+    background:var(--bg);-webkit-backdrop-filter:blur(22px) saturate(1.5);backdrop-filter:blur(22px) saturate(1.5);
+    box-shadow:0 8px 22px rgba(0,0,0,0.34),inset 0 0 0 0.5px var(--edge);
+    color:var(--fg);font-size:12.5px;font-weight:500;white-space:nowrap;}
+  .timer{font-family:var(--mono);font-size:11px;color:var(--fg2);}
+  .wave{display:flex;align-items:center;gap:2px;height:22px;}
+  .wave i{width:2.5px;border-radius:2px;background:var(--fg);height:5px;animation:talk 1s ease-in-out infinite;}
+  .wave i:nth-child(1){animation-duration:.9s;animation-delay:-.1s}.wave i:nth-child(2){animation-duration:1.15s;animation-delay:-.4s}
+  .wave i:nth-child(3){animation-duration:.8s;animation-delay:-.2s}.wave i:nth-child(4){animation-duration:1.05s;animation-delay:-.6s}
+  .wave i:nth-child(5){animation-duration:.88s;animation-delay:-.3s}.wave i:nth-child(6){animation-duration:1.2s;animation-delay:-.15s}
+  .wave i:nth-child(7){animation-duration:.95s;animation-delay:-.5s}
+  @keyframes talk{0%{height:5px}15%{height:17px}30%{height:8px}45%{height:22px}60%{height:6px}75%{height:15px}90%{height:9px}100%{height:5px}}
+  svg{overflow:visible;}
+  .st{fill:none;stroke:var(--stroke);stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;}
+  .spin .ring{stroke-dasharray:47 63;transform-box:fill-box;transform-origin:center;animation:rot 1.1s linear infinite;}
+  @keyframes rot{to{transform:rotate(360deg)}}
+  .warn{width:17px;height:17px;border-radius:50%;background:var(--amber);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex:none;}
+  .warn.red{background:var(--red);}
+  .muted{color:var(--fg2);}
+</style>
+</head>
+<body>
+<main>
+  <div class="eyebrow">Reed · HUD · Dark glass</div>
+  <h1>Every state — over dark and light desktops</h1>
+  <p class="lede">Same dark-glass pill, same white content, shown on a dark desktop (left) and a light one (right) for each state — so you can see the whole picture and confirm it reads everywhere.</p>
+
+  <h2>Lifecycle</h2>
+  <div class="stage">
+    <div class="half dark"><div class="row">
+      <div class="cell"><div class="pill"><svg class="spin" width="18" height="18" viewBox="0 0 24 24"><circle class="st ring" cx="12" cy="12" r="10"/></svg><span>Preparing mic…</span></div><div class="cap">bluetooth warm-up</div></div>
+      <div class="cell"><div class="pill"><div class="wave"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><span>Listening</span><span class="timer">0:02</span></div><div class="cap">listening</div></div>
+      <div class="cell"><div class="pill"><svg class="spin" width="18" height="18" viewBox="0 0 24 24"><circle class="st ring" cx="12" cy="12" r="10"/></svg></div><div class="cap">processing</div></div>
+      <div class="cell"><div class="pill"><svg class="spin" width="18" height="18" viewBox="0 0 24 24"><circle class="st ring" cx="12" cy="12" r="10"/></svg><span>Preparing speech model…</span></div><div class="cap">cold model load</div></div>
+      <div class="cell"><div class="pill"><svg width="18" height="18" viewBox="0 0 24 24"><circle class="st" cx="12" cy="12" r="10"/><path class="st" d="M7 12.5 L10.5 16 L17 8.5"/></svg><span>Done</span></div><div class="cap">done</div></div>
+    </div></div>
+    <div class="half light"><div class="row">
+      <div class="cell"><div class="pill"><svg class="spin" width="18" height="18" viewBox="0 0 24 24"><circle class="st ring" cx="12" cy="12" r="10"/></svg><span>Preparing mic…</span></div><div class="cap">bluetooth warm-up</div></div>
+      <div class="cell"><div class="pill"><div class="wave"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><span>Listening</span><span class="timer">0:02</span></div><div class="cap">listening</div></div>
+      <div class="cell"><div class="pill"><svg class="spin" width="18" height="18" viewBox="0 0 24 24"><circle class="st ring" cx="12" cy="12" r="10"/></svg></div><div class="cap">processing</div></div>
+      <div class="cell"><div class="pill"><svg class="spin" width="18" height="18" viewBox="0 0 24 24"><circle class="st ring" cx="12" cy="12" r="10"/></svg><span>Preparing speech model…</span></div><div class="cap">cold model load</div></div>
+      <div class="cell"><div class="pill"><svg width="18" height="18" viewBox="0 0 24 24"><circle class="st" cx="12" cy="12" r="10"/><path class="st" d="M7 12.5 L10.5 16 L17 8.5"/></svg><span>Done</span></div><div class="cap">done</div></div>
+    </div></div>
+  </div>
+
+  <h2>Errors · actionable (amber)</h2>
+  <div class="stage">
+    <div class="half dark"><div class="row">
+      <div class="cell"><div class="pill"><span class="warn">!</span><span>Couldn't paste - Accessibility needed</span></div><div class="cap">accessibility</div></div>
+      <div class="cell"><div class="pill"><span class="warn">!</span><span>Microphone access off</span></div><div class="cap">mic permission</div></div>
+      <div class="cell"><div class="pill"><span class="warn">!</span><span>Speech model still downloading - 41%</span></div><div class="cap">model download</div></div>
+      <div class="cell"><div class="pill"><span class="warn">!</span><span>Mic wasn't ready</span></div><div class="cap">mic not ready</div></div>
+    </div></div>
+    <div class="half light"><div class="row">
+      <div class="cell"><div class="pill"><span class="warn">!</span><span>Couldn't paste - Accessibility needed</span></div><div class="cap">accessibility</div></div>
+      <div class="cell"><div class="pill"><span class="warn">!</span><span>Microphone access off</span></div><div class="cap">mic permission</div></div>
+      <div class="cell"><div class="pill"><span class="warn">!</span><span>Speech model still downloading - 41%</span></div><div class="cap">model download</div></div>
+      <div class="cell"><div class="pill"><span class="warn">!</span><span>Mic wasn't ready</span></div><div class="cap">mic not ready</div></div>
+    </div></div>
+  </div>
+
+  <h2>Errors · hard (red) &nbsp;·&nbsp; Notice (not an alarm)</h2>
+  <div class="stage">
+    <div class="half dark"><div class="row">
+      <div class="cell"><div class="pill"><span class="warn red">!</span><span>Something went wrong</span></div><div class="cap">hard</div></div>
+      <div class="cell"><div class="pill"><span class="warn red">!</span><span>Audio setup failed</span></div><div class="cap">hard</div></div>
+      <div class="cell"><div class="pill"><span class="muted">Nothing to write</span></div><div class="cap">notice · silence</div></div>
+    </div></div>
+    <div class="half light"><div class="row">
+      <div class="cell"><div class="pill"><span class="warn red">!</span><span>Something went wrong</span></div><div class="cap">hard</div></div>
+      <div class="cell"><div class="pill"><span class="warn red">!</span><span>Audio setup failed</span></div><div class="cap">hard</div></div>
+      <div class="cell"><div class="pill"><span class="muted">Nothing to write</span></div><div class="cap">notice · silence</div></div>
+    </div></div>
+  </div>
+
+  <p class="lede" style="margin-top:26px;">Left = dark desktop, right = light desktop. Every headline is one the current app produces; the canonical design system&#8217;s Errors segment (<a href="hud-design-system.html#errors">hud-design-system.html#errors</a>) lists all of them with severity and menu action.</p>
+</main>
+</body>
+</html>

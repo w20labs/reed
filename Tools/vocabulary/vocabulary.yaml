@@ -1,0 +1,645 @@
+# Built-in dictation vocabulary
+#
+# Ships with the app. Not user-visible, not user-editable.
+# Because it is invisible, every entry must be safe by construction.
+#
+# ---------------------------------------------------------------------
+# STRUCTURE
+#
+# always:   ASR output that is not a valid English word or phrase.
+#           Substitutes unconditionally. Near-zero false positive risk.
+#           These entries also act as domain anchors.
+#
+# gated:    ASR output that IS a valid English word or phrase, where the
+#           substitution is only correct inside a domain. Substitutes
+#           ONLY when that domain is active. Higher value, higher risk.
+#
+# anchors:  unambiguous terms whose presence activates a domain. Drawn
+#           from the same vocabulary. Listed explicitly so activation
+#           does not depend on the substitution table's shape.
+#
+# never:    documented exclusions. Do not add these back without bench
+#           evidence. Present so the reasoning is not lost.
+#
+# ---------------------------------------------------------------------
+# HARD RULE
+#
+# If an entry's source is something a person might reasonably say in
+# ordinary conversation, it belongs in `gated` or `never`, never in
+# `always`. When in doubt, `never`. A missed correction is invisible.
+# A wrong correction is the user watching the app break their sentence.
+# ---------------------------------------------------------------------
+
+version: 1
+
+# =====================================================================
+# DOMAIN: general
+# Always active. No gating. Universal consumer and productivity terms.
+# =====================================================================
+
+general:
+  always:
+    # Apple hardware and OS. The single highest-frequency cluster.
+    "air pods": "AirPods"
+    "airpods": "AirPods"
+    "air pod": "AirPods"
+    "airpod": "AirPods"
+    "air pods pro": "AirPods Pro"
+    "air pods max": "AirPods Max"
+    "air tag": "AirTag"
+    "airtag": "AirTag"
+    "air tags": "AirTags"
+    "airplay": "AirPlay"
+    "air drop": "AirDrop"
+    "airdrop": "AirDrop"
+    "mac os": "macOS"
+    "mac o s": "macOS"
+    "macos": "macOS"
+    "i o s": "iOS"
+    "ios": "iOS"
+    "ipad os": "iPadOS"
+    "ipados": "iPadOS"
+    "watch os": "watchOS"
+    "watchos": "watchOS"
+    "vision os": "visionOS"
+    "visionos": "visionOS"
+    "tv os": "tvOS"
+    "i cloud": "iCloud"
+    "icloud": "iCloud"
+    "i message": "iMessage"
+    "imessage": "iMessage"
+    # "face time" is also a business idiom ("face time with the client");
+    # kept because the product sense dominates dictation. On record: 2026-08-19.
+    "face time": "FaceTime"
+    "facetime": "FaceTime"
+    "i phone": "iPhone"
+    "iphone": "iPhone"
+    "i pad": "iPad"
+    "mac book": "MacBook"
+    "macbook": "MacBook"
+    "mac book pro": "MacBook Pro"
+    "mac book air": "MacBook Air"
+    "apple watch": "Apple Watch"
+    "vision pro": "Vision Pro"
+    "apple silicon": "Apple Silicon"
+    "touch i d": "Touch ID"
+    "face i d": "Face ID"
+    "app store": "App Store"
+    "spot light": "Spotlight"
+
+    # Connectivity and file formats
+    "wi fi": "Wi-Fi"
+    "wifi": "Wi-Fi"
+    "blue tooth": "Bluetooth"
+    "bluetooth": "Bluetooth"
+    "usb c": "USB-C"
+    "usbc": "USB-C"
+    "thunder bolt": "Thunderbolt"
+    "h d m i": "HDMI"
+    "hdmi": "HDMI"
+    "q r code": "QR code"
+    "p d f": "PDF"
+    "c s v": "CSV"
+    "j peg": "JPEG"
+    "jpeg": "JPEG"
+    "p n g": "PNG"
+    "u r l": "URL"
+    "i p address": "IP address"
+    "v p n": "VPN"
+
+    # Common workplace tools
+    "google docs": "Google Docs"
+    "google drive": "Google Drive"
+    "google meet": "Google Meet"
+    "one drive": "OneDrive"
+    "share point": "SharePoint"
+    "drop box": "Dropbox"
+    "you tube": "YouTube"
+    "linked in": "LinkedIn"
+    "what's app": "WhatsApp"
+    "whats app": "WhatsApp"
+
+    # AI and models. High and rising dictation frequency.
+    "chat g p t": "ChatGPT"
+    "chat gpt": "ChatGPT"
+    "chatgpt": "ChatGPT"
+    "open a i": "OpenAI"
+    "openai": "OpenAI"
+    "anthropic": "Anthropic"
+    "andro pick": "Anthropic"
+    "an thropic": "Anthropic"
+    "co pilot": "Copilot"
+    "hugging face": "Hugging Face"
+    "mid journey": "Midjourney"
+    "l l m": "LLM"
+    "a s r": "ASR"
+    "a p i": "API"
+    "apple pie key": "API key"
+    "s d k": "SDK"
+
+  anchors: {strong: [], weak: []}   # general is always active
+  gated: {}            # nothing gated: general has no domain to gate on
+
+# =====================================================================
+# DOMAIN: software engineering
+# =====================================================================
+
+engineering:
+  # strong = unambiguous jargon; weak = words with common ordinary senses.
+  # Activation requires >=2 distinct anchors, at least one strong (2026-08-19:
+  # the flat list activated domains off modal "will" / "commit to the plan").
+  anchors:
+    strong:
+      - "pull request"
+      - "stack trace"
+      - "merge conflict"
+      - "Kubernetes"
+      - "Postgres"
+      - "nginx"
+      - "Xcode"
+      - "SwiftUI"
+      - "OAuth"
+      - "cache invalidation"
+    weak:
+      - "repository"
+      - "commit"
+      - "deploy"
+      - "compile"
+      - "endpoint"
+      - "database"
+      - "function"
+      - "variable"
+      - "debugging"
+
+  always:
+    "x code": "Xcode"
+    "ex code": "Xcode"
+    "excode": "Xcode"
+    "swift u i": "SwiftUI"
+    "swift you i": "SwiftUI"
+    "swiftui": "SwiftUI"
+    "core m l": "Core ML"
+    "coreml": "Core ML"
+    "test flight": "TestFlight"
+    "testflight": "TestFlight"
+    "app kit": "AppKit"
+    "ui kit": "UIKit"
+    "u i kit": "UIKit"
+    "cocoa pods": "CocoaPods"
+    "d sym": "dSYM"
+    "l l d b": "LLDB"
+    "x c test": "XCTest"
+
+    "git hub": "GitHub"
+    "get hub": "GitHub"
+    "git lab": "GitLab"
+    "bit bucket": "Bitbucket"
+    "j son": "JSON"
+    "jason file": "JSON file"
+    "y a m l": "YAML"
+    "yamel": "YAML"
+    "t o m l": "TOML"
+    "reg ex": "regex"
+    "regexp": "regex"
+    "g r p c": "gRPC"
+    "graph q l": "GraphQL"
+    "graphql": "GraphQL"
+    "web hook": "webhook"
+    "web socket": "WebSocket"
+    "local host": "localhost"
+    "std out": "stdout"
+    "std err": "stderr"
+    "c l i": "CLI"
+    "c i c d": "CI/CD"
+    "s s h": "SSH"
+    "t l s": "TLS"
+    "o auth": "OAuth"
+    "oh auth": "OAuth"
+    "j w t": "JWT"
+    "s s o": "SSO"
+    "u u i d": "UUID"
+    "you you i d": "UUID"
+    "c r u d": "CRUD"
+    "o r m": "ORM"
+
+    "post gres": "Postgres"
+    "post grass": "Postgres"
+    "post grease": "Postgres"
+    "postgres q l": "PostgreSQL"
+    "my s q l": "MySQL"
+    "sq lite": "SQLite"
+    "s q lite": "SQLite"
+    "mongo d b": "MongoDB"
+    "dynamo d b": "DynamoDB"
+    "elastic search": "Elasticsearch"
+    "rabbit m q": "RabbitMQ"
+    "kaf ka": "Kafka"
+
+    "cooper netties": "Kubernetes"
+    "kuber netties": "Kubernetes"
+    "coober netes": "Kubernetes"
+    "koober netes": "Kubernetes"
+    "kubernetes": "Kubernetes"
+    "kube c t l": "kubectl"
+    "terra form": "Terraform"
+    "engine x": "nginx"
+    "n ginx": "nginx"
+    "docker file": "Dockerfile"
+    "git hub actions": "GitHub Actions"
+    "cloud front": "CloudFront"
+    "c d n": "CDN"
+
+    "type script": "TypeScript"
+    "typescript": "TypeScript"
+    "java script": "JavaScript"
+    "node j s": "Node.js"
+    "next j s": "Next.js"
+    "react native": "React Native"
+    "tail wind": "Tailwind"
+    "num pie": "NumPy"
+    "numpy": "NumPy"
+    "pan das": "pandas"
+    "pi torch": "PyTorch"
+    "pytorch": "PyTorch"
+    "tensor flow": "TensorFlow"
+
+  gated:
+    # Each of these IS an English word. Only fires with the domain active.
+    "sequel": "SQL"
+    "sequel server": "SQL Server"
+    "readies": "Redis"
+    "async a wait": "async/await"
+    "a sink": "async"
+    "day mon": "daemon"
+    "demon process": "daemon process"
+    "curl": "cURL"
+    "nul pointer": "null pointer"
+    # Moved from general.always 2026-08-19: "time machine" is an ordinary
+    # sci-fi phrase and toddlers have "hugging phases" — both only safe
+    # behind the engineering gate.
+    "time machine": "Time Machine"
+    "hugging phase": "Hugging Face"
+
+# =====================================================================
+# DOMAIN: law, estate planning and probate
+#
+# This vocabulary is unusually dense in near-homophones of ordinary
+# English. That is why the gate exists. Do not promote gated entries.
+# =====================================================================
+
+estate:
+  anchors:
+    strong:
+      - "probate"
+      - "trustee"
+      - "fiduciary"
+      - "codicil"
+      - "testator"
+      - "decedent"
+      - "power of attorney"
+      - "grantor"
+      - "conservatorship"
+      - "attestation clause"
+      - "revocable living trust"
+      - "irrevocable trust"
+      - "durable power of attorney"
+      - "advance healthcare directive"
+      - "elective share"
+      - "homestead exemption"
+      - "small estate affidavit"
+    weak:
+      - "trust"
+      - "will"
+      - "estate"
+      - "beneficiary"
+
+  always:
+    "cod a sill": "codicil"
+    "cod is ill": "codicil"
+    "codicile": "codicil"
+    "cod i sill": "codicil"
+    "test tator": "testator"
+    "testa tour": "testator"
+    "testa trix": "testatrix"
+    "per stir pees": "per stirpes"
+    "per stirp is": "per stirpes"
+    "per stir peas": "per stirpes"
+    "per sturpies": "per stirpes"
+    "in testacy": "intestacy"
+    "remainder man": "remainderman"
+    "spend thrift": "spendthrift"
+    "spend thrift clause": "spendthrift clause"
+    "pour over will": "pour-over will"
+    "holo graphic will": "holographic will"
+    "letters testa mentary": "letters testamentary"
+    "self proving affidavit": "self-proving affidavit"
+    "q tip trust": "QTIP trust"
+    "q d r o": "QDRO"
+    "quadro order": "QDRO"
+    "g r a t": "GRAT"
+    "i l i t": "ILIT"
+    "crummey power": "Crummey power"
+    "crummy power": "Crummey power"
+    "generation skipping transfer": "generation-skipping transfer"
+    "step up in basis": "step-up in basis"
+    "heg stad": "Heggstad"
+    "heggstad petition": "Heggstad petition"
+
+  gated:
+    "interstate": "intestate"
+    "in a state": "intestate"
+    "descendant estate": "decedent's estate"
+    "deceased ant": "decedent"
+    "settler of the trust": "settlor of the trust"
+    "settler": "settlor"
+    "test taker": "testator"
+    "test data": "testator"
+    "poor over will": "pour-over will"
+    "holy graphic will": "holographic will"
+    "illicit trust": "ILIT"
+    "q tip": "QTIP"
+    "de visee": "devisee"
+    "leg a tee": "legatee"
+
+# =====================================================================
+# DOMAIN: law, immigration
+#
+# Form numbers are the highest-value entries. They are spoken constantly
+# and transcribed as loose digit strings almost every time.
+# =====================================================================
+
+immigration:
+  anchors:
+    strong:
+      - "USCIS"
+      - "green card"
+      - "adjustment of status"
+      - "priority date"
+      - "naturalization"
+      - "asylum"
+      - "removal proceedings"
+      - "consulate"
+      - "consular processing"
+      - "visa bulletin"
+      - "master calendar hearing"
+      - "withholding of removal"
+      - "cancellation of removal"
+      - "unlawful presence"
+      - "derivative beneficiary"
+      - "public charge"
+      - "advance parole"
+      - "biometrics appointment"
+    weak:
+      - "visa"
+      - "petitioner"
+      - "beneficiary"
+      - "immigration"
+
+  always:
+    "us cis": "USCIS"
+    "u s c i s": "USCIS"
+    "uscis": "USCIS"
+    "e o i r": "EOIR"
+    "n v c": "NVC"
+    "c b p": "CBP"
+    "d h s": "DHS"
+    "b i a": "BIA"
+    "e a d": "EAD"
+    "l p r": "LPR"
+    "r f e": "RFE"
+    "n o i d": "NOID"
+    "noyd": "NOID"
+    "n t a": "NTA"
+    "n i w": "NIW"
+    "national interest waiver": "NIW"
+    "stem opt": "STEM OPT"
+    "o p t": "OPT"
+    "c p t": "CPT"
+    "t p s": "TPS"
+    "dhaka program": "DACA"
+
+    # Form numbers
+    "i one thirty": "I-130"
+    "i one thirty one": "I-131"
+    "i one forty": "I-140"
+    "i four eighty five": "I-485"
+    "i seven fifty one": "I-751"
+    "i seven sixty five": "I-765"
+    "i eight sixty four": "I-864"
+    "i six oh one a": "I-601A"
+    "n four hundred": "N-400"
+    "n four zero zero": "N-400"
+    "n six hundred": "N-600"
+    "g twenty eight": "G-28"
+    "d s one sixty": "DS-160"
+    "d s two sixty": "DS-260"
+
+    # Visa categories
+    "e b one": "EB-1"
+    "e b two": "EB-2"
+    "e b three": "EB-3"
+    "e b five": "EB-5"
+    "h one b": "H-1B"
+    "h1b": "H-1B"
+    "age one b": "H-1B"
+    "l one a": "L-1A"
+    "l one b": "L-1B"
+    "o one visa": "O-1 visa"
+    "f one visa": "F-1 visa"
+    "j one visa": "J-1 visa"
+    "t n visa": "TN visa"
+
+  gated:
+    "ice detained": "ICE detained"
+    "eye ninety four": "I-94"
+    "i ninety four": "I-94"
+
+# =====================================================================
+# DOMAIN: business and finance, general
+# =====================================================================
+
+business:
+  anchors:
+    strong:
+      - "balance sheet"
+      - "fiscal year"
+      - "invoice"
+      - "payroll"
+      - "valuation"
+      - "cap table"
+      - "term sheet"
+      - "due diligence"
+    weak:
+      - "revenue"
+      - "quarter"
+      - "investor"
+      - "burn rate"
+      - "runway"
+      - "churn"
+
+  always:
+    "a r r": "ARR"
+    "m r r": "MRR"
+    "e b i t d a": "EBITDA"
+    "ebit da": "EBITDA"
+    "c a c": "CAC"
+    "l t v": "LTV"
+    "k p i": "KPI"
+    "r o i": "ROI"
+    "s a a s": "SaaS"
+    "sass company": "SaaS company"
+    "b two b": "B2B"
+    "b two c": "B2C"
+    "y o y": "YoY"
+    "q o q": "QoQ"
+    "four oh one k": "401(k)"
+    "four zero one k": "401(k)"
+    "w two form": "W-2 form"
+    "ten ninety nine form": "1099 form"
+    "ten ninety nine contractor": "1099 contractor"
+    "i r a account": "IRA"
+    "h s a": "HSA"
+    "f s a account": "FSA"
+    "l l c": "LLC"
+    "c corp": "C-corp"
+    "s corp": "S-corp"
+    "e i n": "EIN"
+    "pre money": "pre-money"
+    "post money": "post-money"
+    "eighty three b election": "83(b) election"
+    "safe note": "SAFE note"
+
+  gated:
+
+# =====================================================================
+# NEVER. Documented exclusions.
+#
+# Each of these was a candidate and was rejected. The rejection reason
+# is the point of this section. Do not re-add without bench evidence
+# showing the correction wins more than the false positive loses.
+# =====================================================================
+
+never:
+  - source: "read"
+    reason: "extremely common verb; any proper-noun target destroys ordinary sentences"
+  - source: "get"
+    reason: "cannot distinguish from 'git' without unacceptable risk"
+  - source: "were"
+    reason: "common verb; 'WER' is too rare to justify"
+  - source: "where"
+    reason: "common interrogative"
+  - source: "loan"
+    reason: "common noun; any acronym target is domain-specific and rare"
+  - source: "century"
+    reason: "common noun"
+  - source: "lama"
+    reason: "'Llama' correction breaks animal and religious usage"
+  - source: "bonnet"
+    reason: "common noun in several English variants"
+  - source: "apex"
+    reason: "common noun; motorsport sense not distinguishable"
+  - source: "cliff"
+    reason: "common noun and given name"
+  - source: "safe"
+    reason: "common adjective; only 'safe note' as a bigram is acceptable"
+  - source: "trust"
+    reason: "common verb; used as an anchor, never as a substitution source"
+  - source: "will"
+    reason: "modal verb and given name; anchor only"
+  - source: "ice"
+    reason: "common noun; only the bigram 'ice detained' is gated"
+  - source: "opus"
+    reason: "common noun in music contexts"
+  - source: "sonnet"
+    reason: "common noun in literary contexts"
+  - source: "haiku"
+    reason: "common noun in literary contexts"
+  - source: "grat"
+    reason: "bare acronym too close to ordinary speech fragments"
+  - source: "tam"
+    reason: "common noun and given name"
+  - source: "duns"
+    reason: "surname and rare acronym; not worth the risk"
+  - source: "post it"
+    reason: "moved 2026-08-19: 'I will post it tomorrow' is everyday speech; was in general.always"
+  - source: "entropic"
+    reason: "moved 2026-08-19: real physics/information-theory word; was an Anthropic variant in general.always"
+  - source: "air play"
+    reason: "moved 2026-08-19: 'the song got airplay' is real usage; the glued 'airplay' stays"
+  - source: "dacca"
+    reason: "moved 2026-08-19: old spelling of Dhaka; asylum dictations about Bangladesh are exactly when immigration is active"
+  - source: "dissident"
+    reason: "moved 2026-08-19: asylum narratives contain actual dissidents; was estate.gated -> decedent"
+  - source: "intestines"
+    reason: "moved 2026-08-19: estate work discusses healthcare; anatomy is plausible; was estate.gated -> intestate"
+  - source: "ten ninety nine"
+    reason: "restricted 2026-08-19: also how people say $10.99; only the 'form'/'contractor' bigrams substitute"
+
+# =====================================================================
+# FORMATTING PATTERNS
+#
+# Not vocabulary. A separate span-level pass that runs BEFORE term
+# correction. Universal, always on, no gating, no domain.
+# Implement as a state machine over tokens, not as table lookup.
+# =====================================================================
+
+formatting:
+
+  domain_name:
+    trigger: 'a "dot" token immediately followed by a known TLD token'
+    tlds: [com, org, net, edu, gov, io, ai, co, dev, app, me, us, law,
+           uk, ca, de, fr, jp, xyz, so, tv, fm, sh, ly]
+    rules:
+      - "walk left from the dot to collect the label; stop at a token that cannot be part of a label"
+      - "collapse spelled single letters into a run"
+      - "convert number words to digits inside the span"
+      - "strip all internal whitespace"
+      - "lowercase the whole span"
+      - "handle repeated dot+label for subdomains"
+      - "convert a following 'slash' token and its path"
+    examples:
+      - {in: "example dot com", out: "example.com"}
+      - {in: "acme legal dot com", out: "acmelegal.com"}
+      - {in: "w twenty labs dot a i", out: "w20labs.ai"}
+      - {in: "docs dot example dot com slash pricing", out: "docs.example.com/pricing"}
+
+  email:
+    trigger: 'an "at" token where the right side resolves to a domain_name'
+    rules:
+      - "collect the local part by walking left"
+      - "handle a spoken 'dot' inside the local part"
+    examples:
+      - {in: "jane at example dot com", out: "jane@example.com"}
+      - {in: "jane dot doe at example dot com", out: "jane.doe@example.com"}
+
+  phone_us:
+    trigger: "ten consecutive digit words, optionally preceded by a spoken country code"
+    examples:
+      - {in: "five five five one two three four five six seven", out: "(555) 123-4567"}
+
+  identifier:
+    trigger: "a spelled-letter run adjacent to a digit run with no intervening filler"
+    caution: "highest false-positive risk of any formatter rule; require at least six characters total and no sentence-ending punctuation inside the span"
+    examples:
+      - {in: "case number a b c one two three four", out: "ABC1234"}
+
+  version:
+    examples:
+      - {in: "version two point five", out: "v2.5"}
+      - {in: "version one point zero point three", out: "v1.0.3"}
+
+  legal_form_number:
+    note: "only when the immigration or estate domain is active"
+    examples:
+      - {in: "form i four eighty five", out: "Form I-485"}
+      - {in: "eighty three b", out: "83(b)"}
+
+  currency:
+    examples:
+      - {in: "two hundred fifty dollars", out: "$250"}
+      - {in: "one point five million dollars", out: "$1.5 million"}
+
+  time:
+    examples:
+      - {in: "three thirty p m", out: "3:30 PM"}
+      - {in: "nine a m", out: "9:00 AM"}

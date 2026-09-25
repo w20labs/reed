@@ -1,0 +1,243 @@
+{
+  "_comment": [
+    "The component -> notice mapping package-notices.py packages and validates.",
+    "Three things bind this mapping to reality, and all three are enforced:",
+    "  pin_digest      - SHA-256 of the Package.resolved (identity, revision) set.",
+    "  manifest_digest - SHA-256 of Package.swift. Not parsed: any edit makes the",
+    "                    mapping stale until re-reviewed. A regex over product",
+    "                    declarations missed a product carrying a condition:",
+    "                    argument, and every narrower fix leaves the next",
+    "                    declaration form open (review round 3).",
+    "  sha256          - per notice, the exact bytes of its authority. Phrases in",
+    "                    must_contain say WHY a file matters; the hash says it is",
+    "                    that file. A notice without a sha256 is an error.",
+    "`selection` below is the product set those digests were reviewed against \u2014",
+    "a record for the next reviewer, not itself the enforcement."
+  ],
+  "pin_digest": "537bf2fb91711de44f6cfd897e585f030e6a1bab52499b4100f0a3c13060e78e",
+  "components": [
+    {
+      "id": "keyboardshortcuts",
+      "pin": "1aef85578fdd4f9eaeeb8d53b7b4fc31bf08fe27",
+      "selected": "product KeyboardShortcuts -> target KeyboardShortcuts (source)",
+      "notices": [
+        {
+          "source": "checkout:KeyboardShortcuts/license",
+          "dest": "KeyboardShortcuts-LICENSE.txt",
+          "kind": "elected",
+          "must_contain": [
+            "MIT License",
+            "Sindre Sorhus"
+          ],
+          "sha256": "5c932d88256b4ab958f64a856fa48e8bd1f55bc1d96b8149c65689e0c61789d3"
+        }
+      ]
+    },
+    {
+      "id": "aptabase-swift",
+      "pin": "cfd67fac2a228d448d9d2ac92ffc71589cc3ef00",
+      "selected": "product Aptabase -> target Aptabase (source, + PrivacyInfo.xcprivacy resource bundle)",
+      "notices": [
+        {
+          "source": "checkout:aptabase-swift/LICENSE",
+          "dest": "Aptabase-LICENSE.txt",
+          "kind": "elected",
+          "must_contain": [
+            "MIT License",
+            "Sumbit Labs"
+          ],
+          "sha256": "d5a9bb2c657044de0613711185de97a1d444c32e3aa5b34b34721e8b21334a4b"
+        }
+      ]
+    },
+    {
+      "id": "sentry-cocoa",
+      "pin": "dad229c665bfd043c5d80ac7aa77717cbd19a1c3",
+      "selected": "product Sentry -> binaryTarget Sentry (Sentry.xcframework, macos-arm64_arm64e_x86_64, static)",
+      "notices": [
+        {
+          "source": "checkout:sentry-cocoa/LICENSE.md",
+          "dest": "Sentry-LICENSE.txt",
+          "kind": "cumulative",
+          "must_contain": [
+            "The MIT License (MIT)",
+            "Copyright (c) 2015 Sentry"
+          ],
+          "sha256": "1784335a04bbe8014b9bf0f6a373f7b3804855792545702199dbdd6e2c5b6ad1"
+        },
+        {
+          "source": "repo:legal/third-party/sentry-fishhook-and-yandex-notices.txt",
+          "dest": "Sentry-fishhook-notice.txt",
+          "kind": "cumulative",
+          "must_contain": [
+            "Copyright (c) 2013, Facebook, Inc.",
+            "Redistributions in binary form must reproduce the above copyright notice"
+          ],
+          "sha256": "416e4889eba32c3d4ce8c4ee3b70bc02803028becffb388229c3c9d8cef171aa"
+        },
+        {
+          "source": "repo:legal/third-party/sentry-webkit-derived-notices.txt",
+          "dest": "Sentry-webkit-derived-notices.txt",
+          "kind": "cumulative",
+          "must_contain": [
+            "Apple Inc. All rights reserved",
+            "Redistributions in binary form must reproduce the above copyright notice"
+          ],
+          "sha256": "16c82676e29c0fd9607406b8932c99b15839347a4c417030cb90f6f50d2303b9"
+        },
+        {
+          "source": "repo:legal/third-party/sentry-apsl-header-reference.txt",
+          "dest": "Sentry-apsl-header-reference.txt",
+          "kind": "reference",
+          "must_contain": [
+            "Apple Public Source License"
+          ],
+          "sha256": "334b830732dadc76fde845779e92e320df8f2587c361c6b5398b4bd4c23d8f77"
+        }
+      ]
+    },
+    {
+      "id": "sparkle",
+      "pin": "d46d456107feacc80711b21847b82b07bd9fb46e",
+      "selected": "product Sparkle -> binaryTarget Sparkle (Sparkle.framework, macos-arm64_x86_64)",
+      "notices": [
+        {
+          "source": "checkout:Sparkle/LICENSE",
+          "dest": "Sparkle-LICENSE.txt",
+          "kind": "cumulative",
+          "must_contain": [
+            "Copyright (c) 2006-2013 Andy Matuschak",
+            "EXTERNAL LICENSES",
+            "bsdiff",
+            "sais-lite",
+            "ed25519"
+          ],
+          "sha256": "389a4e4e9a32f059775b13a06e25a591445ba229d2838d26dd3e7c0c45127cfe"
+        }
+      ]
+    },
+    {
+      "id": "onnxruntime-swift-package-manager",
+      "pin": "b7fb7f7dea8a2469e6335d95a61b8f36d0dc83b2",
+      "selected": "product onnxruntime -> target OnnxRuntimeBindings (source) + binaryTarget onnxruntime (pod archive)",
+      "notices": [
+        {
+          "source": "checkout:onnxruntime-swift-package-manager/LICENSE",
+          "dest": "onnxruntime-swift-wrapper-LICENSE.txt",
+          "kind": "elected",
+          "must_contain": [
+            "MIT License",
+            "Microsoft Corporation"
+          ],
+          "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
+        },
+        {
+          "source": "repo:legal/third-party/onnxruntime-LICENSE.txt",
+          "dest": "onnxruntime-LICENSE.txt",
+          "kind": "cumulative",
+          "must_contain": [
+            "MIT License",
+            "Microsoft Corporation"
+          ],
+          "sha256": "2f07c72751aed99790b8a4869cf2311df85a860b22ded05fa22803587a48922c"
+        },
+        {
+          "source": "repo:legal/third-party/onnxruntime-ThirdPartyNotices.txt",
+          "dest": "onnxruntime-ThirdPartyNotices.txt",
+          "kind": "cumulative",
+          "must_contain": [
+            "THIRD PARTY SOFTWARE NOTICES AND INFORMATION"
+          ],
+          "min_bytes": 300000,
+          "sha256": "0e07b95f3a8d6230037707c5c4a2b554d12c4cb67369669ac255635528ffcee2"
+        }
+      ]
+    },
+    {
+      "id": "fluidaudio",
+      "pin": "19600a485baa4998812e4654b70d2bab8f2c9949",
+      "selected": "product FluidAudio -> targets FluidAudio + FastClusterWrapper + MachTaskSelfWrapper",
+      "notices": [
+        {
+          "source": "checkout:FluidAudio/LICENSE",
+          "dest": "FluidAudio-LICENSE.txt",
+          "kind": "cumulative",
+          "must_contain": [
+            "Apache License",
+            "Version 2.0"
+          ],
+          "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
+        },
+        {
+          "source": "checkout:FluidAudio/ThirdPartyLicenses/fastcluster-LICENSE.md",
+          "dest": "FluidAudio-fastcluster-LICENSE.txt",
+          "kind": "cumulative",
+          "must_contain": [
+            "Daniel M",
+            "Google Inc.",
+            "Redistribution and use"
+          ],
+          "sha256": "67594dbe4a7477719c8160373e7767c2c319ef966a6042f76846a18af02cde0a"
+        },
+        {
+          "source": "checkout:FluidAudio/ThirdPartyLicenses/vbx-LICENSE.md",
+          "dest": "FluidAudio-vbx-LICENSE.txt",
+          "kind": "cumulative",
+          "must_contain": [
+            "Apache License",
+            "Version 2.0"
+          ],
+          "sha256": "08e57fdb5187c816e937916f1e176aadb400ca76f4b3b493d69730ec8f10dd80"
+        }
+      ]
+    },
+    {
+      "id": "parakeet-speech-model",
+      "pin": "not-pinned-runtime-download",
+      "selected": "downloaded at runtime by FluidAudio; not linked and not in the bundle",
+      "notices": [
+        {
+          "source": "repo:legal/third-party/parakeet-model-attribution.txt",
+          "dest": "Parakeet-speech-model-attribution.txt",
+          "kind": "cumulative",
+          "must_contain": [
+            "parakeet-tdt-0.6b-v3-coreml",
+            "nvidia/parakeet-tdt-0.6b-v3",
+            "CC-BY-4.0",
+            "creativecommons.org/licenses/by/4.0",
+            "converted to Core ML",
+            "does not pin a revision"
+          ],
+          "sha256": "270b8750378e823a9a59c1199b2a124d4d9a1cf412d870ff429385c2d4a0eed9"
+        }
+      ]
+    }
+  ],
+  "excluded": [
+    {
+      "id": "onnxruntime_extensions",
+      "why": "fetched as a binary artifact but referenced by no target Reed links; no Reed source imports it"
+    },
+    {
+      "id": "sentry-variants-unselected",
+      "why": "Sentry-Dynamic, Sentry-Dynamic-WithARM64e, Sentry-WithoutUIKitOrAppKit, Sentry-WithoutUIKitOrAppKit-WithARM64e are fetched but not the selected product"
+    },
+    {
+      "id": "test-targets",
+      "why": "ReedTests and every dependency test target are not in the app bundle"
+    },
+    {
+      "id": "fluidaudiocli",
+      "why": "FluidAudio's executable product is not linked by Reed"
+    }
+  ],
+  "selection": [
+    "FluidAudio:FluidAudio",
+    "KeyboardShortcuts:KeyboardShortcuts",
+    "Sparkle:Sparkle",
+    "aptabase-swift:Aptabase",
+    "onnxruntime-swift-package-manager:onnxruntime",
+    "sentry-cocoa:Sentry"
+  ],
+  "manifest_digest": "063bfe5d0587762120b73de4efbbca2b257763453541e0696dcf3ba422b78cb0"
+}

@@ -1,0 +1,59 @@
+Speech recognition model — attribution
+======================================
+
+Reed downloads a speech-recognition model onto your Mac after installation.
+The model is not part of this application bundle and is not distributed with
+it; this notice records what the model is and the terms it carries.
+
+Model as downloaded
+-------------------
+  FluidInference/parakeet-tdt-0.6b-v3-coreml
+  https://huggingface.co/FluidInference/parakeet-tdt-0.6b-v3-coreml
+
+  A Core ML conversion, by FluidInference, of the base model below. In the
+  words of its own model card: "On-device multilingual ASR model converted to
+  Core ML for Apple platforms." The conversion script the card points to is
+  https://github.com/FluidInference/mobius/tree/main/models/stt/parakeet-tdt-v3-0.6b/coreml
+
+Base model
+----------
+  nvidia/parakeet-tdt-0.6b-v3
+  https://huggingface.co/nvidia/parakeet-tdt-0.6b-v3
+
+  Licence: CC-BY-4.0. The NVIDIA model card states:
+  "GOVERNING TERMS: Use of this model is governed by the CC-BY-4.0 license."
+  https://creativecommons.org/licenses/by/4.0/legalcode.en
+
+Licence of the converted model — unresolved
+-------------------------------------------
+The conversion repository states two different things, and this notice does
+not choose between them:
+
+  * its model-card metadata declares    license: cc-by-4.0
+  * its prose "## License" section says "Apache 2.0. See the FluidAudio
+    repository for details and usage guidance."
+
+The base model's terms are unambiguously CC-BY-4.0. Reed makes no election
+between the two statements above; the discrepancy is recorded as an open
+question for the model's publisher and for Reed's owner, and this file will be
+corrected once it is settled. FluidAudio's own source code is Apache-2.0, but
+a library's code licence does not determine the terms of model weights it
+downloads.
+
+Changes made by Reed
+--------------------
+None. Reed downloads the converted model as published and does not modify,
+retrain or redistribute it. The conversion from the NVIDIA base model to Core
+ML was performed upstream by FluidInference, not by Reed.
+
+Which bytes you receive
+-----------------------
+Reed's model downloader requests the repository's `main` branch and does not
+pin a revision, so the exact files a given install receives are whatever that
+repository serves at download time. For reference only, the repository was at
+revision 7dd20fe6b1797d35f5e3307e8b1732d9a178edfe when this notice was
+written. That is a record of what was observed, not a pin, and it does not
+constrain what a later download returns.
+
+Sources recorded: docs/steps/oss-05-verification.md and
+legal/third-party/PROVENANCE.md

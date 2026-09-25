@@ -1,0 +1,17 @@
+title: "[question] "
+body:
+  - type: textarea
+    id: question
+    attributes:
+      label: question
+      description: what are you trying to understand?
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: context
+      description: what Reed version, macOS version, Mac, or app you dictate into matters here?
+    validations:
+      required: false

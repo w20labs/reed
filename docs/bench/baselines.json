@@ -1,0 +1,24 @@
+{
+  "_readme": "Regression ceilings for the gated benches. A run that exceeds a ceiling FAILS (red on the QA page and in the bench itself), it does not warn. Values carry ~25-60% headroom over the 2026-08-30 measurements on the M3 Ultra (p1 e2e p95 1586 ms, WER v3 2.8% ctc110m 5.0%, gate 10 refusals; the WhisperKit arm left with the engine on 2026-09-06). Tighten deliberately; never loosen without writing down why. asr.slice_collapse_per_mille_max (2026-09-08): collapsed slices per 1000 start offsets in the slice-start sweep on the local review corpus with the second reading on (measured 5 of 868 = 5.8).",
+  "p1": {
+    "e2e_p95_ms": {
+      "v3": 2700
+    },
+    "_why": "2026-09-08: the bench used to measure without denoise (no bundle under swift test, model never found, raw audio silently). With denoise proven to run, 100 samples on the M3 Ultra: e2e p95 2118 ms, denoise p50 124 ms. Ceiling 2700 is that p95 with ~25% headroom, the file's policy."
+  },
+  "gate": {
+    "max_refusals": 13,
+    "_why": "2026-09-08: five retained runs (docs/bench/gate_repeat_2026-09-08) all give 11 refusals \u2014 the model is deterministic run to run; the earlier 10 was the v4-prompt reference (gate_round4.txt, 2026-08-30) and seven cases moved with prompt v5 and the model since. Headroom of two covers such drift; a regression shows as cases flipping in docs/bench/gate_v5_2026-09-08.txt, not as the count."
+  },
+  "asr": {
+    "wer_max_pct": {
+      "v3": 5.0,
+      "ctc110m": 8.0
+    },
+    "p50_max_ms": {
+      "v3": 300,
+      "ctc110m": 250
+    },
+    "slice_collapse_per_mille_max": 10
+  }
+}

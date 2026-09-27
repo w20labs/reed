@@ -376,8 +376,8 @@ def unit_areas():
          ["Cleanup", "Chunker", "Stumble", "Correction", "Vocab", "Number", "Injector", "BenchScoring", "BenchBaselines"]),
         ("unit_audio", "Unit · Audio & recording", "Capture, segmentation, overlap sessions and assembly, denoising, metering, keep-warm, WAV headers, config-change recovery — the audio path.",
          ["Segmenter", "Overlap", "Audio", "WAV", "Denoise", "Meter", "KeepWarm", "Silence", "ConfigChange", "ModelPrep", "SpeechModelStore", "LongAudio", "CoordinatorInit"]),
-        ("unit_auth",  "Unit · Network, privacy & gates", "The network guarantee and host allowlist, the no-telemetry guard and its cleanup, legacy-data purge, terms acceptance, Keychain shield, feature flags.",
-         ["Terms", "GateURL", "Network", "KeyStore", "FeatureFlag", "Telemetry", "LegacyPaidData"]),
+        ("unit_auth",  "Unit · Network, privacy & gates", "The network guarantee and host allowlist, the no-telemetry guard and its cleanup, legacy-data purge, the setup gate, Keychain shield, feature flags.",
+         ["SetupGate", "GateURL", "Network", "KeyStore", "FeatureFlag", "Telemetry", "LegacyPaidData"]),
         ("unit_app",   "Unit · App, UI & input", "Onboarding flow, hotkeys and hold triggers, Bluetooth handling, error copy, logs, layout — everything the user touches.", None),
     ]
     buckets = {aid: [] for aid, *_ in areas}

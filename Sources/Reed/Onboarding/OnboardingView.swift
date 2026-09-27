@@ -139,19 +139,9 @@ struct OnboardingView: View {
     private var footer: some View {
         HStack {
             if state.step.isFirst {
-                // The terms footnote lives in the Back link's slot — dead
-                // space on Welcome — directly adjacent to Continue, whose
-                // click is the affirmative act (design P12). No checkbox and
-                // no separate screen: Welcome's Continue is the acceptance.
-                markdownText(
-                    "By continuing, you agree to the [Terms of Service](\(ReedLinks.terms)) "
-                    + "and acknowledge the [Privacy Policy](\(ReedLinks.privacy)).")
-                    .font(ReedFont.ui(11))
-                    .foregroundStyle(Onb.slate)
-                    .tint(Onb.ink)
-                    .lineSpacing(2)
-                    .frame(maxWidth: 340, alignment: .leading)
-                    .fixedSize(horizontal: false, vertical: true)
+                // Welcome has no Back and, since 2026-09-26, no terms to
+                // accept: Reed is Apache-licensed and has nothing to agree to.
+                EmptyView()
             } else {
                 Button {
                     state.back()
@@ -171,7 +161,6 @@ struct OnboardingView: View {
             Spacer()
 
             Button(state.step.isLast ? "Get started" : "Continue") {
-                if state.step.isFirst { TermsAcceptance.record() }
                 if state.step.isLast {
                     OnboardingState.markComplete()
                     onFinish()

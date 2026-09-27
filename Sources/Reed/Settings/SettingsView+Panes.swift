@@ -10,7 +10,6 @@ import SwiftUI
 /// The legal pages ship with the launch site deploy at these exact paths.
 enum ReedLinks {
     static let site = "https://reed.w20.ai"
-    static let terms = "https://reed.w20.ai/legal/terms.html"
     static let privacy = "https://reed.w20.ai/legal/privacy.html"
     /// The standalone "what we collect" page — separate from the Termageddon-
     /// embedded privacy policy so it can be edited without touching that file.

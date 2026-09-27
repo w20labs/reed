@@ -17,13 +17,13 @@ extension Coordinator {
         // Setup incomplete: the hotkey summons onboarding, never the pipeline
         // (P12 follow-up, 2026-08-07 — field report: the hotkey worked before
         // onboarding finished, surfacing a raw mic-permission error). The
-        // gate is on PRECONDITIONS, not ceremony: once terms are accepted
-        // (Welcome's Continue) and a model is installed, dictation is
-        // legitimate even mid-flow — the Done step invites exactly that test
-        // dictation before "Get started" stamps completion (second field
-        // report, same day). Missing either → bring setup forward.
-        if OnboardingState.shouldShowOnFirstLaunch(),
-           !(TermsAcceptance.isRecorded && ModelStore.isSpeechModelInstalled) {
+        // gate is on PRECONDITIONS, not ceremony: once the speech model is
+        // installed, dictation is legitimate even mid-flow — the Done step
+        // invites exactly that test dictation before "Get started" stamps
+        // completion (second field report, same day). Reed has no terms to
+        // accept (2026-09-26), so the model is the whole precondition.
+        if Self.setupBlocksDictation(onboardingPending: OnboardingState.shouldShowOnFirstLaunch(),
+                                     modelInstalled: ModelStore.isSpeechModelInstalled) {
             openOnboarding()
             return
         }
@@ -177,5 +177,11 @@ extension Coordinator {
             activeError = dictationError
             state = .error(dictationError.headline)
         }
+    }
+
+    /// Whether an unfinished setup must take the hotkey instead of dictation:
+    /// only while onboarding is pending AND the speech model is missing.
+    nonisolated static func setupBlocksDictation(onboardingPending: Bool, modelInstalled: Bool) -> Bool {
+        onboardingPending && !modelInstalled
     }
 }

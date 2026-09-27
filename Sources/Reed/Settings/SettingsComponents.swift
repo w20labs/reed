@@ -105,11 +105,13 @@ struct SidebarItem: View {
 
 /// A content pane: big sentence-case title, optional hint, then groups —
 /// scrolls independently of the sidebar.
-/// An optional small group label + a rounded card of rows + optional markdown
-/// footer. The card provides the border/fill; rows inside are borderless.
+/// An optional small group label + a rounded card of rows + optional footer.
+/// The card provides the border/fill; rows inside are borderless. A footer
+/// with a link is built with `markdownText`, never a `LocalizedStringKey`:
+/// an interpolated link target becomes "%@" there (see `markdownText`).
 struct CardGroup<Content: View>: View {
     var label: String?
-    var footer: LocalizedStringKey?
+    var footer: Text?
     var dimmed: Bool = false
     @ViewBuilder var content: () -> Content
 
@@ -132,7 +134,7 @@ struct CardGroup<Content: View>: View {
                 )
                 .opacity(dimmed ? 0.55 : 1)
             if let footer {
-                Text(footer)
+                footer
                     .font(SettingsType.footnote)
                     .foregroundStyle(.secondary)
                     .tint(.primary)

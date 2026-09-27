@@ -5,8 +5,8 @@ Turns legal/asset-sources/cue-source.wav into Resources/Sounds/pop.wav:
 
   1. trim the trailing silence, keeping 30 ms of tail;
   2. fade the last 10 ms to exact zero, so the file cannot click on playback;
-  3. scale to -2.4 dBFS peak, the level of the cue Reed shipped before, so the
-     replacement is not louder in daily use;
+  3. scale to 15% more amplitude than the previous -2.4 dBFS peak
+     (about -1.19 dBFS), keeping headroom below clipping;
   4. mono -> stereo, matching the previous file's channel count.
 
 Deterministic: same input, same output bytes. Standard library only.
@@ -32,7 +32,7 @@ DEST = ROOT / "Resources/Sounds/pop.wav"
 
 TAIL_MS = 30.0
 FADE_MS = 10.0
-PEAK_DBFS = -2.4
+PEAK_DBFS = -2.4 + 20 * math.log10(1.15)
 
 
 def build(source: Path) -> bytes:

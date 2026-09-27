@@ -14,6 +14,8 @@ enum ReedLinks {
     /// The standalone "what we collect" page — separate from the Termageddon-
     /// embedded privacy policy so it can be edited without touching that file.
     static let privacyWhatWeCollect = "https://reed.w20.ai/legal/what-we-collect.html"
+    /// Settings › Privacy › Connections footer.
+    static let connectionsFooter = "[See exactly what Reed connects to](\(privacyWhatWeCollect))"
 }
 
 /// `Text(LocalizedStringKey("[label](\(url))"))` looks like it substitutes `url`
@@ -25,10 +27,15 @@ enum ReedLinks {
 /// `AttributedString` from a plain (non-`LocalizedStringKey`) `String` avoids
 /// that interpolation path and substitutes correctly.
 func markdownText(_ raw: String) -> Text {
+    Text(markdownAttributed(raw))
+}
+
+/// The attributed string `markdownText` shows, links underlined.
+func markdownAttributed(_ raw: String) -> AttributedString {
     guard var attributed = try? AttributedString(
         markdown: raw,
         options: AttributedString.MarkdownParsingOptions(interpretedSyntax: .inlineOnlyPreservingWhitespace)
-    ) else { return Text(raw) }
+    ) else { return AttributedString(raw) }
     // Links used to be told apart by being green. Green is a shape colour now
     // (2.76:1 as text), so every markdown link is underlined here instead —
     // at the helper, so no call site can demote a link's colour and leave it
@@ -37,7 +44,7 @@ func markdownText(_ raw: String) -> Text {
     for run in attributed.runs where run.link != nil {
         attributed[run.range].underlineStyle = .single
     }
-    return Text(attributed)
+    return attributed
 }
 
 /// The right-hand content panes for each sidebar tab. Split out so
@@ -141,9 +148,7 @@ extension SettingsView {
             // connections that remain are named rather than hidden.
             CardGroup(
                 label: "Connections",
-                footer: LocalizedStringKey(
-                    "[See exactly what Reed connects to](\(ReedLinks.privacyWhatWeCollect))"
-                )
+                footer: markdownText(ReedLinks.connectionsFooter)
             ) {
                 PaneRow(icon: "hand.raised",
                         title: "Two connections, nothing else.",

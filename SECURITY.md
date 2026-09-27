@@ -59,12 +59,9 @@ What helps, in rough order of usefulness:
   typed for is the design, not a vulnerability.
 - **An attacker who is already root, or already running code as your user.**
   At that point they do not need Reed.
-- **The published Sparkle public key, the update feed URL, and the analytics and
-  crash-reporting identifiers.** These are public by design. Released builds
-  carry service identifiers; they are not credentials and are not secrets.
-  Unconfigured source builds carry none, and a builder may supply their own —
-  `build-app.sh` reads `REED_SENTRY_DSN` and `REED_APTABASE_APP_KEY` from the
-  environment and writes them into the bundle only.
+- **The published Sparkle public key and the update feed URL.** These are
+  public by design; they are not credentials and are not secrets. Reed has no
+  analytics or crash reporting, so it carries no service identifiers.
 - **Third-party services Reed talks to**, such as the model host. Report those
   to their owners.
 - **Findings from automated scanners with no demonstrated impact.**

@@ -24,7 +24,7 @@ final class DictationErrorTests: XCTestCase {
             userInfo: [NSLocalizedDescriptionKey: "HTTP 401: {\"secret\":\"leak\"}"]))
         XCTAssertFalse(error.headline.contains("HTTP"))
         XCTAssertFalse(error.headline.contains("{"))
-        // …but the raw detail is preserved for the collapsible menu row + Sentry.
+        // …but the raw detail is preserved for the collapsible menu row.
         XCTAssertTrue(error.raw.contains("HTTP 401"))
     }
 }

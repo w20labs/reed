@@ -4,8 +4,6 @@
 <dict>
 	<key>ATSApplicationFontsPath</key>
 	<string>Fonts</string>
-	<key>AptabaseAppKey</key>
-	<string></string>
 	<key>CFBundleDisplayName</key>
 	<string>Reed</string>
 	<key>CFBundleExecutable</key>
@@ -38,7 +36,5 @@
 	<string>https://reed-public-551270927645.s3.us-west-2.amazonaws.com/appcast.xml</string>
 	<key>SUPublicEDKey</key>
 	<string>Pyr39EfD4BgZBD58/Jg/iULaKVVH5kyw5WGdSFBM/Nc=</string>
-	<key>SentryDSN</key>
-	<string></string>
 </dict>
 </plist>

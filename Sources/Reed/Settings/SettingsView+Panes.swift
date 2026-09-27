@@ -128,7 +128,7 @@ extension SettingsView {
     // MARK: - Privacy
 
     var privacyPane: some View {
-        SettingsPane(title: "Privacy", hint: "You're in control of what Reed shares.") {
+        SettingsPane(title: "Privacy", hint: "Reed sends nothing about you.") {
             // The promise, where users look for it (P15, DECIDED 2026-09-02).
             // A statement, not a control: there is no other place dictation
             // can run.
@@ -137,39 +137,18 @@ extension SettingsView {
                         title: "Dictation runs on your Mac.",
                         subtitle: "Nothing leaves it - not your voice, not your text.") { EmptyView() }
             }
-            // Each toggle appears only if this build can actually reach the
-            // service behind it (D3, 2026-09-21). The repository ships both
-            // identifiers empty and build-app.sh injects them for official
-            // releases, so a build from source has nowhere to report: showing
-            // a switch that cannot send anything would be a control that lies.
-            // With neither configured the whole card is absent and the pane is
-            // the promise alone, which is the accurate statement for that build.
-            if Analytics.isConfigured || Diagnostics.isConfigured {
-                CardGroup(
-                    label: "Sharing",
-                    footer: LocalizedStringKey(
-                        "Anonymous metrics only - your transcripts and audio are never sent. "
-                        + "[See exactly what we collect](\(ReedLinks.privacyWhatWeCollect))"
-                    )
-                ) {
-                    if Analytics.isConfigured {
-                        PaneRow(icon: "chart.bar", title: "Share anonymous usage analytics") {
-                            Toggle("", isOn: $enableAnalytics).labelsHidden()
-                        }
-                    }
-                    // Only between two rows that are both present.
-                    if Analytics.isConfigured && Diagnostics.isConfigured {
-                        CardDivider()
-                    }
-                    if Diagnostics.isConfigured {
-                        PaneRow(icon: "ladybug", title: "Share crash reports") {
-                            Toggle("", isOn: Binding(
-                                get: { !crashReportsDisabled },
-                                set: { crashReportsDisabled = !$0; Diagnostics.setEnabled($0) }
-                            )).labelsHidden()
-                        }
-                    }
-                }
+            // No telemetry since 2026-09-26: no analytics and no crash
+            // reports, so there is nothing to switch on or off. The two
+            // connections that remain are named rather than hidden.
+            CardGroup(
+                label: "Connections",
+                footer: LocalizedStringKey(
+                    "[See exactly what Reed connects to](\(ReedLinks.privacyWhatWeCollect))"
+                )
+            ) {
+                PaneRow(icon: "hand.raised",
+                        title: "No analytics, no crash reports.",
+                        subtitle: "Reed connects only to download its speech model and to check for updates.") { EmptyView() }
             }
         }
     }

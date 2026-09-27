@@ -59,7 +59,6 @@ extension Coordinator {
                     detail: "The on-device model didn't finish preparing. Please try again.",
                     raw: "local ASR: model load timed out")
                 state = .error(activeError?.headline ?? "Speech model couldn't load")
-                recordLocalDictation(ok: false, stage: "model_load", context: context)
                 return
             }
             let (denoisedWav, denoiseSeconds) = await denoiseStage(wav)
@@ -77,14 +76,12 @@ extension Coordinator {
                 log.info("local ASR produced empty body")
                 state = .notice("Nothing to write")
                 DebugTimings.persist("DROP empty-asr wav=\(wav.count) | \(recorder.lastStopStats)")
-                recordLocalDictation(ok: false, stage: "empty", context: context)
                 return
             }
             if SilenceArtifact.isArtifact(content, rmsDB: recorder.lastRecordingRMSdB) {
                 log.info("local ASR returned a silence artifact")
                 state = .notice("Nothing to write")
                 DebugTimings.persist("DROP silence-artifact wav=\(wav.count) | \(recorder.lastStopStats)")
-                recordLocalDictation(ok: false, stage: "empty", context: context)
                 return
             }
             // Built-in vocabulary pass (spec 2026-08-19): deterministic
@@ -128,14 +125,11 @@ extension Coordinator {
             log.notice("local dictation timings: \(line)")
             DebugTimings.persist(line)
             if DebugTimings.enabled { lastTimings = line }
-            recordLocalDictation(ok: true, stage: nil, context: context, text: text,
-                                 asrSeconds: asrSeconds, cleanSeconds: cleanSeconds, counts: counts)
             finishDictation()
         } catch {
             log.error("local pipeline failed: \(error.localizedDescription)")
             activeError = localError(for: error)
             state = .error(activeError?.headline ?? "On-device transcription failed")
-            recordLocalDictation(ok: false, stage: "transcribe", context: context)
             endReview()
         }
     }

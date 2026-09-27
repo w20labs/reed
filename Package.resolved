@@ -1,15 +1,6 @@
 {
-  "originHash" : "063bfe5d0587762120b73de4efbbca2b257763453541e0696dcf3ba422b78cb0",
+  "originHash" : "f44c8b569959126cebb096eff149c27e17bc4b58dd60d7b51436feb4e8f86347",
   "pins" : [
-    {
-      "identity" : "aptabase-swift",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/aptabase/aptabase-swift",
-      "state" : {
-        "revision" : "cfd67fac2a228d448d9d2ac92ffc71589cc3ef00",
-        "version" : "0.3.11"
-      }
-    },
     {
       "identity" : "fluidaudio",
       "kind" : "remoteSourceControl",
@@ -35,15 +26,6 @@
       "state" : {
         "revision" : "b7fb7f7dea8a2469e6335d95a61b8f36d0dc83b2",
         "version" : "1.24.2"
-      }
-    },
-    {
-      "identity" : "sentry-cocoa",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/getsentry/sentry-cocoa",
-      "state" : {
-        "revision" : "dad229c665bfd043c5d80ac7aa77717cbd19a1c3",
-        "version" : "8.58.3"
       }
     },
     {

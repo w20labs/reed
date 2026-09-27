@@ -16,19 +16,9 @@ struct ReedApp: App {
         FileLog.trimOnLaunch()
         // Review copies expire on time even after the developer key is gone (P16).
         LocalReviewStore.expireOnLaunch()
-        // Installs that said yes under the old onboarding checkbox or consent
-        // card start from off, once (2026-09-14). Before Diagnostics.start(),
-        // so Sentry never starts on the migrating launch.
-        TelemetryMigration.runOnce()
-        // Crash + error reporting (Sentry). Sends nothing unless turned on in
-        // Settings → Privacy (off by default, never asked).
-        Diagnostics.start()
-        // Initializes Aptabase from the Info.plist key. Sends nothing unless
-        // analytics is turned on in Settings → Privacy.
-        Analytics.start()
-        // If analytics is on, the deferred first-dictation facts go out now —
-        // exactly once, ever.
-        FirstDictation.emitIfDue()
+        // Reed no longer has telemetry (2026-09-26): clear what the old
+        // analytics and crash-report switches left behind, once.
+        LegacyTelemetryPurge.runOnce()
     }
 
     var body: some Scene {

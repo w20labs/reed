@@ -15,12 +15,6 @@ extension Coordinator {
     func logWarmupSucceeded() {
         let signalAt = Date()
         persistWarmup(signalAt: signalAt, outcome: "ok")
-        // First-ever dictation: capture the two facts that decide whether Reed
-        // felt like magic (transport + time-to-audio). Local-only until the
-        // user consents to telemetry — see FirstDictation.
-        if let device = currentInputDevice, let ms = recorder.warmMillis(to: signalAt) {
-            FirstDictation.recordIfFirst(transport: device.transport, timeToAudioMs: ms)
-        }
     }
 
     /// Emitted when the recording ends without real signal ever arriving:

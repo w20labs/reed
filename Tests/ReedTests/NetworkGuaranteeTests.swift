@@ -3,7 +3,7 @@ import XCTest
 
 /// The network guarantee, enforced by test. Reed has one pipeline and it never
 /// uses the network; `GateURLProtocol` blocks every host outside its allowlist
-/// (the model download, opt-in analytics, the update bucket). These go through
+/// (the model download and the update bucket; Reed has no telemetry). These go through
 /// the real layers — URLSession → registered GateURLProtocol → trap — so a
 /// regression in the gate fails here, not only in a unit check of its list.
 final class NetworkGuaranteeTests: XCTestCase {
@@ -55,11 +55,17 @@ final class NetworkGuaranteeTests: XCTestCase {
         XCTAssertEqual(NetworkGate.shared.activity.blockedCount, 0)
     }
 
-    func testTheAnalyticsAndUpdateHostsPass() async {
-        _ = await send("https://eu.aptabase.com/api/v0/events")
+    func testTheUpdateFeedPasses() async {
         _ = await send("https://reed-public-551270927645.s3.us-west-2.amazonaws.com/appcast.xml")
-        XCTAssertEqual(NetworkTrap.hits, 2, "opt-in analytics and the update feed must clear the gate")
+        XCTAssertEqual(NetworkTrap.hits, 1, "the update feed must clear the gate")
         XCTAssertEqual(NetworkGate.shared.activity.blockedCount, 0)
+    }
+
+    func testTheFormerAnalyticsHostIsBlocked() async {
+        // Telemetry was removed on 2026-09-26; its ingest must not be reachable.
+        _ = await send("https://eu.aptabase.com/api/v0/events")
+        XCTAssertEqual(NetworkTrap.hits, 0, "the former analytics host must not be reachable")
+        XCTAssertEqual(NetworkGate.shared.activity.blockedCount, 1)
     }
 }
 

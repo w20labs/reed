@@ -33,19 +33,6 @@ final class AuditGapsTests: XCTestCase {
 
     // MARK: latency buckets — every boundary, both sides
 
-    func testLatencyBucketBoundaries() {
-        let expectations: [(Int, String)] = [
-            (0, "0-1s"), (999, "0-1s"), (1_000, "1-5s"), (4_999, "1-5s"),
-            (5_000, "5-10s"), (9_999, "5-10s"), (10_000, "10-15s"), (14_999, "10-15s"),
-            (15_000, "15-30s"), (29_999, "15-30s"), (30_000, "30-60s"), (59_999, "30-60s"),
-            (60_000, "60-120s"), (119_999, "60-120s"), (120_000, "120-300s"),
-            (299_999, "120-300s"), (300_000, "300s+"),
-        ]
-        for (ms, bucket) in expectations {
-            XCTAssertEqual(Analytics.latencyBucket(ms), bucket, "\(ms) ms")
-        }
-    }
-
     // MARK: the gate is always armed
 
     func testGateProtocolInterceptsAnUnlistedHostWhateverAnOldModeSetting() {

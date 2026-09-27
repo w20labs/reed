@@ -30,43 +30,6 @@ The version is the one Reed actually links, taken from the wrapper's own
 `Package.swift` at pin `b7fb7f7dea8a2469e6335d95a61b8f36d0dc83b2` — not from a
 similarly named artifact and not from upstream `main`.
 
-## Sentry
-
-Extracted from the pinned checkout `getsentry/sentry-cocoa` at
-`dad229c665bfd043c5d80ac7aa77717cbd19a1c3` (the revision in `Package.resolved`).
-
-| file | source path in that revision | sha256 |
-|---|---|---|
-| `sentry-fishhook-and-yandex-notices.txt` | `Sources/SentryCrash/Recording/Tools/SentryCrashCxaThrowSwapper.c`, leading comment | `416e4889eba32c3d4ce8c4ee3b70bc02803028becffb388229c3c9d8cef171aa` |
-| `sentry-webkit-derived-notices.txt` | `Sources/Sentry/include/SentryCPU.h` + `Sources/Sentry/include/SentryCompiler.h`, leading comments | `16c82676e29c0fd9607406b8932c99b15839347a4c417030cb90f6f50d2303b9` |
-| `sentry-apsl-header-reference.txt` | `Sources/SentryCrash/Recording/Tools/SentryCrashObjCApple.h`, leading comment | `334b830732dadc76fde845779e92e320df8f2587c361c6b5398b4bd4c23d8f77` |
-
-Why these three and not every copyright header in the package:
-
-- **fishhook (Facebook, 2013)** — BSD-3 whose clause requires that binary
-  redistributions "reproduce the above copyright notice … in the documentation
-  and/or other materials provided with the distribution". Its object,
-  `SentryCrashCxaThrowSwapper.o`, is present in the selected static archive.
-  The same file's *first* notice (YANDEX LLC, 2019) is a source-preservation
-  clause; it is included here because it is part of the same header block, not
-  because it imposes a binary-distribution duty.
-- **WebKit-derived (Apple Inc. and others)** — the same style of binary
-  reproduction clause. These are headers with no object of their own, so their
-  inclusion in the linked binary is inherited from the translation units that
-  include them and was not traced per object. They are packaged because the
-  clause applies if the code is present, not because presence was proven.
-- **APSL header reference** — `SentryCrashObjCApple.h` is under the Apple
-  Public Source License 2.0, a different licence with its own obligations.
-  **This file is a reference, not a determination.** Committing it does not
-  resolve what APSL 2.0 requires of Reed; that question is recorded as open in
-  `docs/steps/oss-05-verification.md`. Adding a link is not an answer.
-
-Notices whose clause is source-preservation only ("shall remain in place in this
-source code" — the KSCrash-derived files from Karl Stenerud, Bugsnag and Yandex
-throughout `SentryCrash`) are **not** packaged as binary notices. Upstream
-satisfies those clauses by keeping the headers in place, and listing them here
-would misrepresent a source obligation as a distribution one.
-
 ## Speech model
 
 `parakeet-model-attribution.txt` is written by Reed, not copied. Its factual

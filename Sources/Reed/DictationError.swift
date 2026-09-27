@@ -2,8 +2,7 @@ import Foundation
 
 /// A user-facing dictation failure: curated human copy + where to fix it,
 /// derived from the raw recorder error. The pill shows `headline`; the menu
-/// shows `headline` + `detail` + an action + the collapsible `raw` (which also
-/// feeds Sentry). Never surface `error.localizedDescription` directly — it
+/// shows `headline` + `detail` + an action + the collapsible `raw`. Never surface `error.localizedDescription` directly — it
 /// leaks raw error text into a 260 pt pill.
 struct DictationError: Equatable {
     enum Action: Equatable { case none, openSettings, openPermissions }

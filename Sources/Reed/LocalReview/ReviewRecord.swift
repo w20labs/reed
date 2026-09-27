@@ -230,25 +230,4 @@ struct CleanupCounts: Codable, Equatable {
         guard !table.isEmpty else { return "" }
         return "(" + table.keys.sorted().map { "\($0)×\(table[$0] ?? 0)" }.joined(separator: ",") + ")"
     }
-
-    /// Flat, content-free properties for the analytics event.
-    var analyticsProperties: [String: Int] {
-        var props: [String: Int] = [
-            "cleanup_chunks": chunks, "cleanup_accepted": modelAccepted,
-            "cleanup_rejected": rulesAfterRejection, "cleanup_failed": modelFailed,
-            "cleanup_rules_only": rulesOnly, "cleanup_budget_skipped": budgetSkipped,
-            "cleanup_not_attempted": notAttempted.values.reduce(0, +), "cleanup_retried": retried,
-            "seams_sentence_end": seamsSentenceEnd, "seams_glued": seamsGluedBreath,
-            "seams_cap": seamsCapSeam, "seams_recleaned": seamsRecleaned, "seams_absorbed": seamsAbsorbed,
-            "seams_restart": seamsRestart, "seams_ruled": seamsRuled
-        ]
-        for (reason, count) in rejections { props["gate_\(Self.key(reason))"] = count }
-        for (reason, count) in failures { props["model_\(Self.key(reason))"] = count }
-        for (reason, count) in notAttempted { props["skip_\(Self.key(reason))"] = count }
-        return props
-    }
-
-    private static func key(_ reason: String) -> String {
-        String(reason.lowercased().map { $0.isLetter || $0.isNumber ? $0 : "_" })
-    }
 }

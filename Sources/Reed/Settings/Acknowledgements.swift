@@ -68,7 +68,6 @@ struct AcknowledgementsStore {
     /// not listed still appears — `fallbackTitle` makes something readable out
     /// of it — so the list can never quietly omit a newly packaged notice.
     static let titles: [String: String] = [
-        "Aptabase-LICENSE.txt": "Aptabase",
         "FluidAudio-LICENSE.txt": "FluidAudio",
         "FluidAudio-fastcluster-LICENSE.txt": "FluidAudio · fastcluster",
         "FluidAudio-vbx-LICENSE.txt": "FluidAudio · VBx",
@@ -77,10 +76,6 @@ struct AcknowledgementsStore {
         "onnxruntime-swift-wrapper-LICENSE.txt": "ONNX Runtime · Swift wrapper",
         "onnxruntime-ThirdPartyNotices.txt": "ONNX Runtime · third-party notices",
         "Parakeet-speech-model-attribution.txt": "Speech model attribution",
-        "Sentry-LICENSE.txt": "Sentry",
-        "Sentry-apsl-header-reference.txt": "Sentry · APSL reference",
-        "Sentry-fishhook-notice.txt": "Sentry · fishhook notice",
-        "Sentry-webkit-derived-notices.txt": "Sentry · WebKit-derived notices",
         "Sparkle-LICENSE.txt": "Sparkle",
     ]
 

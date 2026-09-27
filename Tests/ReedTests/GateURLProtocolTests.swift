@@ -27,16 +27,11 @@ final class GateURLProtocolTests: XCTestCase {
         XCTAssertFalse(GateURLProtocol.isAllowed(host: "example-analytics.com"))
     }
 
-    func testOptInAnalyticsHostClearsTheGate() {
-        // Operational traffic obeys the Privacy toggles, not the gate. The
-        // allowlist was missing the analytics host until 2026-08-06, so
-        // opted-in events were silently dropped while Sentry (same consent,
-        // own transport) went through. Per-event consent gating still applies
-        // above this layer (Analytics.isEnabled, default OFF).
-        XCTAssertTrue(GateURLProtocol.isAllowed(host: "eu.aptabase.com"))
-        XCTAssertTrue(GateURLProtocol.isAllowed(host: "aptabase.com"))
-        // Boundary rule still holds around the suffix.
-        XCTAssertFalse(GateURLProtocol.isAllowed(host: "notaptabase.com"))
-        XCTAssertFalse(GateURLProtocol.isAllowed(host: "aptabase.com.evil.net"))
+    func testFormerTelemetryHostsAreBlocked() {
+        // Reed has no telemetry since 2026-09-26: the analytics ingest left
+        // the allowlist, and the crash-report ingest was never on it.
+        XCTAssertFalse(GateURLProtocol.isAllowed(host: "eu.aptabase.com"))
+        XCTAssertFalse(GateURLProtocol.isAllowed(host: "aptabase.com"))
+        XCTAssertFalse(GateURLProtocol.isAllowed(host: "o4511827269779456.ingest.de.sentry.io"))
     }
 }

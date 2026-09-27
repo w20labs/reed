@@ -170,7 +170,6 @@ extension Coordinator {
         guard !text.isEmpty else {
             state = .notice("Nothing to write")
             DebugTimings.persist("DROP empty-asr(overlap) wav=\(wav.count) | \(recorder.lastStopStats)")
-            recordLocalDictation(ok: false, stage: "empty", context: context)
             endReview()
             return
         }
@@ -188,8 +187,6 @@ extension Coordinator {
         log.notice("local dictation timings: \(line)")
         DebugTimings.persist(line)
         if DebugTimings.enabled { lastTimings = line }
-        recordLocalDictation(ok: true, stage: nil, context: context, text: text,
-                             asrSeconds: tailSeconds, cleanSeconds: outstandingSeconds - tailSeconds, counts: counts)
         finishDictation()
     }
 }

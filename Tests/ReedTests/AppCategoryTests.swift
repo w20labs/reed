@@ -1,7 +1,7 @@
 import XCTest
 @testable import Reed
 
-final class AnalyticsAppCategoryTests: XCTestCase {
+final class AppCategoryTests: XCTestCase {
     func testKnownBundleIDsMapToExpectedCategories() {
         let cases: [(String, String)] = [
             ("com.apple.Terminal", "terminal"),
@@ -21,16 +21,16 @@ final class AnalyticsAppCategoryTests: XCTestCase {
             ("notion.id", "notes_docs"),
         ]
         for (bundleID, expected) in cases {
-            XCTAssertEqual(Analytics.appCategory(for: bundleID), expected,
+            XCTAssertEqual(AppCategory.category(for: bundleID), expected,
                            "expected \(bundleID) to map to \(expected)")
         }
     }
 
     func testUnmappedRealBundleIDReturnsOther() {
-        XCTAssertEqual(Analytics.appCategory(for: "com.example.SomeRandomApp"), "other")
+        XCTAssertEqual(AppCategory.category(for: "com.example.SomeRandomApp"), "other")
     }
 
     func testNilBundleIDReturnsUnknown() {
-        XCTAssertEqual(Analytics.appCategory(for: nil), "unknown")
+        XCTAssertEqual(AppCategory.category(for: nil), "unknown")
     }
 }

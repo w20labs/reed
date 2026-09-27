@@ -9,8 +9,6 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/sindresorhus/KeyboardShortcuts", from: "2.0.0"),
-        .package(url: "https://github.com/aptabase/aptabase-swift", from: "0.3.0"),
-        .package(url: "https://github.com/getsentry/sentry-cocoa", from: "8.0.0"),
         .package(url: "https://github.com/sparkle-project/Sparkle", from: "2.9.0"),
         // Runs the bundled FastEnhancer denoise model (Local Only pre-ASR
         // noise suppression) — see Sources/Reed/LocalASR/DenoiserModel.swift.
@@ -28,8 +26,6 @@ let package = Package(
             dependencies: [
                 "ReedObjC",
                 .product(name: "KeyboardShortcuts", package: "KeyboardShortcuts"),
-                .product(name: "Aptabase", package: "aptabase-swift"),
-                .product(name: "Sentry", package: "sentry-cocoa"),
                 .product(name: "Sparkle", package: "Sparkle"),
                 .product(name: "onnxruntime", package: "onnxruntime-swift-package-manager"),
                 .product(name: "FluidAudio", package: "FluidAudio"),

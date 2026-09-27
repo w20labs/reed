@@ -82,25 +82,16 @@ final class DictationReviewTests: XCTestCase {
         XCTAssertEqual(review.counts.seamsGluedBreath, 1)
     }
 
-    func testCountsSummaryAndAnalyticsPropertiesAreContentFree() {
+    func testCountsSummaryIsContentFree() {
         var counts = CleanupCounts()
         counts.chunks = 4; counts.modelAccepted = 1; counts.rulesAfterRejection = 1; counts.budgetSkipped = 1
         counts.notAttempted = ["tier-basic": 1]
         counts.rejections = ["unlicensed-deletion": 1]; counts.seamsSentenceEnd = 2; counts.seamsGluedBreath = 1
         XCTAssertEqual(counts.summary, "cleanup a1 r1(unlicensed-deletion×1) f0 o0 b1 n1(tier-basic×1) · seams e2 g1 c0 x0 a0 r0")
-        let props = counts.analyticsProperties
-        XCTAssertEqual(props["cleanup_accepted"], 1)
-        XCTAssertEqual(props["cleanup_budget_skipped"], 1)
-        XCTAssertEqual(props["cleanup_not_attempted"], 1)
-        XCTAssertEqual(props["skip_tier_basic"], 1)
-        XCTAssertEqual(props["gate_unlicensed_deletion"], 1)
-        XCTAssertEqual(props["seams_glued"], 1)
-        XCTAssertTrue(props.values.allSatisfy { $0 >= 0 })
         XCTAssertEqual(CleanupCounts().summary, "cleanup a0 r0 f0 o0 b0 n0", "no seams: no seams part")
         // Seam verdicts (decision 1): their count appears once one was applied.
         counts.seamsRuled = 1
         XCTAssertEqual(counts.summary, "cleanup a1 r1(unlicensed-deletion×1) f0 o0 b1 n1(tier-basic×1) · seams e2 g1 c0 x0 a0 r0 v1")
-        XCTAssertEqual(counts.analyticsProperties["seams_ruled"], 1)
         let review = DictationReview(keepsContent: false)
         review.join(segment: 1, decision: .seamComma)
         review.join(segment: 2, decision: .seamNothing)

@@ -38,8 +38,6 @@ struct SettingsView: View {
 
     // Telemetry is off by default and Reed never asks (2026-09-14): these two
     // toggles are the only way it gets turned on.
-    @AppStorage("enableAnalytics") var enableAnalytics: Bool = false
-    @AppStorage(Diagnostics.optOutKey) var crashReportsDisabled: Bool = true
 
     @State var micGranted: Bool = false
     @State var axGranted: Bool = false

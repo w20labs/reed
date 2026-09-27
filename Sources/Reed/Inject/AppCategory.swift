@@ -1,9 +1,7 @@
 import Foundation
 
-/// Maps a frontmost-app bundle ID to a small fixed taxonomy. Used by
-/// analytics bucketing (`Analytics.appCategory`, so `target_app` stays a
-/// small fixed set instead of dozens of noisy per-app-variant bundle IDs) and
-/// by the injector's terminal check (`TextInjector.sanitize`).
+/// Maps a frontmost-app bundle ID to a small fixed taxonomy. Used by the
+/// injector's terminal check (`TextInjector.sanitize`).
 enum AppCategory {
     private static let byBundleID: [String: String] = [
         // terminal
@@ -54,8 +52,7 @@ enum AppCategory {
 
     /// Bucket a frontmost-app bundle ID into the fixed taxonomy. `nil` (no
     /// frontmost app read) is distinct from a real-but-unmapped bundle ID:
-    /// `"unknown"` vs `"other"` — only the latter is actionable (see
-    /// `Diagnostics.captureMessage` call sites).
+    /// `"unknown"` vs `"other"` — only the latter names an app to add.
     static func category(for bundleID: String?) -> String {
         guard let bundleID else { return "unknown" }
         return byBundleID[bundleID] ?? "other"

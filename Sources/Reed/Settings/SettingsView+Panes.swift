@@ -127,7 +127,7 @@ extension SettingsView {
     // MARK: - Privacy
 
     var privacyPane: some View {
-        SettingsPane(title: "Privacy", hint: "Reed sends nothing about you.") {
+        SettingsPane(title: "Privacy", hint: "No usage analytics, no crash reports.") {
             // The promise, where users look for it (P15, DECIDED 2026-09-02).
             // A statement, not a control: there is no other place dictation
             // can run.
@@ -146,8 +146,8 @@ extension SettingsView {
                 )
             ) {
                 PaneRow(icon: "hand.raised",
-                        title: "No analytics, no crash reports.",
-                        subtitle: "Reed connects only to download its speech model and to check for updates.") { EmptyView() }
+                        title: "Two connections, nothing else.",
+                        subtitle: "Downloading the speech model and checking for updates. Like any web request, they carry your IP address; the update check also names the app version.") { EmptyView() }
             }
         }
     }

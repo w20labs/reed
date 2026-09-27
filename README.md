@@ -36,7 +36,7 @@ open /Applications/Reed.app
 
 Onboarding walks through seven steps on first launch:
 
-1. **Welcome** — pressing Continue accepts the Terms of Service and acknowledges the Privacy Policy linked beside it.
+1. **Welcome** — an introduction; there is nothing to accept (Reed is Apache-licensed).
 2. **Microphone** — grant access. If the current input is Bluetooth, the step offers a faster built-in or wired mic.
 3. **Accessibility** — turn Reed on in System Settings so it can insert text at the cursor.
 4. **Hotkey** — keep the default `⌃⌥` hold or record your own shortcut.

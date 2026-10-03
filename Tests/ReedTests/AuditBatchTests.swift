@@ -22,8 +22,10 @@ final class AuditBatchTests: XCTestCase {
     }
 
     func testVersionTwoTokenNumberWithPatchDoesNotCrash() {
-        // Same shape one layer deeper: versionWithZeros' parseIntOrZero call
-        // could land exactly at tokens.count.
+        // Same shape one layer deeper: the index after a two-token major
+        // could land exactly at tokens.count. (The versionWithZeros/
+        // parseIntOrZero pair this guarded folded into dottedRun, 2026-10-02;
+        // the bound is now that run parser's.)
         let out = CorrectionPass.apply("update to version twenty five point", active: [.general])
         XCTAssertEqual(out.text, "update to version twenty five point")
     }

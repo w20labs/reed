@@ -55,7 +55,7 @@ enum SpokenFormatter {
             var found: CorrectionPass.Edit? = currency(at: i, tokens: tokens)
                 ?? time(at: i, tokens: tokens)
                 ?? phone(at: i, tokens: tokens)
-                ?? version(at: i, tokens: tokens)
+                ?? version(at: i, tokens: tokens) ?? dottedNumber(at: i, tokens: tokens)
             if found == nil, legalActive { found = legalForm(at: i, tokens: tokens) }
             if found == nil { found = identifier(at: i, tokens: tokens) }
             // Inverse text normalization (cardinals, ordinals, clock times)
@@ -317,45 +317,17 @@ extension SpokenFormatter {
                                    pattern: "phone_us", domain: nil, rule: nil)
     }
 
+    /// "version two point three point one" / "version zero dot three dot
+    /// five" → v2.3.1 / v0.3.5. The run itself is parsed by `dottedRun`, so
+    /// a labelled version reads components exactly as an unlabelled dotted
+    /// run does: leading zeros kept, digit-by-digit spelling joined, and an
+    /// unfinished run left spoken.
     private static func version(at i: Int, tokens: [VocabToken]) -> CorrectionPass.Edit? {
-        guard tokens[i].norm == "version", i + 3 <= tokens.count,
-              let (major, used1) = parseInt(at: i + 1, tokens: tokens),
-              i + 1 + used1 < tokens.count,
-              tokens[i + 1 + used1].norm == "point",
-              let (minor, used2) = parseInt(at: i + 2 + used1, tokens: tokens) else {
-            // "version one point zero": parseInt refuses "zero"; allow it.
-            return versionWithZeros(at: i, tokens: tokens)
-        }
-        var parts = [major, minor]
-        var idx = i + 2 + used1 + used2
-        while idx + 1 < tokens.count, tokens[idx].norm == "point",
-              let (patch, used3) = parseIntOrZero(at: idx + 1, tokens: tokens) {
-            parts.append(patch); idx += 1 + used3
-        }
-        return CorrectionPass.Edit(first: i, last: idx - 1,
-                                   replacement: "v" + parts.map(String.init).joined(separator: "."),
-                                   pattern: "version", domain: nil, rule: nil)
-    }
-
-    private static func parseIntOrZero(at i: Int, tokens: [VocabToken]) -> (Int, Int)? {
-        guard i < tokens.count else { return nil }
-        if tokens[i].norm == "zero" { return (0, 1) }
-        return parseInt(at: i, tokens: tokens)
-    }
-
-    private static func versionWithZeros(at i: Int, tokens: [VocabToken]) -> CorrectionPass.Edit? {
-        guard tokens[i].norm == "version", i + 3 < tokens.count,
-              let (major, used1) = parseIntOrZero(at: i + 1, tokens: tokens),
-              i + 1 + used1 < tokens.count, tokens[i + 1 + used1].norm == "point",
-              let (minor, used2) = parseIntOrZero(at: i + 2 + used1, tokens: tokens) else { return nil }
-        var parts = [major, minor]
-        var idx = i + 2 + used1 + used2
-        while idx + 1 < tokens.count, tokens[idx].norm == "point",
-              let (patch, used3) = parseIntOrZero(at: idx + 1, tokens: tokens) {
-            parts.append(patch); idx += 1 + used3
-        }
-        return CorrectionPass.Edit(first: i, last: idx - 1,
-                                   replacement: "v" + parts.map(String.init).joined(separator: "."),
+        guard tokens[i].norm == "version",
+              let run = dottedRun(at: i + 1, tokens: tokens, separator: isVersionSeparator)
+        else { return nil }
+        return CorrectionPass.Edit(first: i, last: run.last,
+                                   replacement: "v" + run.parts.joined(separator: "."),
                                    pattern: "version", domain: nil, rule: nil)
     }
 

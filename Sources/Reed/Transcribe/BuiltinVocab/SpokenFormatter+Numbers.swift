@@ -141,7 +141,7 @@ extension SpokenFormatter {
         (norm.count == 1 && norm.first!.isLetter) || letterNames.contains(norm)
     }
 
-    private static func isNumberWord(_ norm: String) -> Bool {
+    static func isNumberWord(_ norm: String) -> Bool {
         ones[norm] != nil || teens[norm] != nil || tens[norm] != nil || hyphenated(norm) != nil
     }
 
@@ -158,15 +158,18 @@ extension SpokenFormatter {
         // After a label word the run is a digit string: "room four oh two"
         // → 402, "extension one one nine" → 119, "phase two" → 2.
         if labelled, let (digits, used) = digitConcat(at: i, tokens: tokens) {
-            // A dangling "point" is an unfinished version number — leave it spoken.
-            if i + used < tokens.count, tokens[i + used].norm == "point" { return nil }
+            // A dangling separator is an unfinished version number — leave it spoken.
+            if i + used < tokens.count, isVersionSeparator(tokens[i + used].norm) { return nil }
             return CorrectionPass.Edit(first: i, last: i + used - 1, replacement: digits,
                                        pattern: "cardinal", domain: nil, rule: nil)
         }
         guard let (value, used) = parseCardinal(at: i, tokens: tokens) else { return nil }
         let next = i + used < tokens.count ? tokens[i + used].norm : ""
         // Other rules own these continuations.
-        if ["o'clock", "o’clock", "dollars", "dollar", "point", "thousand", "million", "billion"].contains(next) { return nil }
+        // "dot" alongside "point": a number before either separator belongs to
+        // a version run, so it stays spoken when that run was declined as
+        // unfinished ("ten dot zero dot zero dot").
+        if ["o'clock", "o’clock", "dollars", "dollar", "point", "dot", "thousand", "million", "billion"].contains(next) { return nil }
         if meridiemSafe(at: i + used, tokens: tokens) != nil { return nil }
         // A number word beside another number word is a run — a price, a
         // time, an identifier — that the rules above declined; it stays

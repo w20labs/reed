@@ -1,6 +1,6 @@
-# Reed
+# Reed Dictation
 
-A personal, local-only voice dictation tool for macOS. Hold a shortcut, talk, release — text appears at the cursor.
+Reed Dictation (Reed) is free, local-only voice dictation for macOS. Hold a shortcut, talk, release — text appears at the cursor. Download and help: [reed.w20.ai](https://reed.w20.ai).
 
 Pipeline (fully on-device): hotkey → AVAudioEngine capture → on-device denoise (FastEnhancer) → Parakeet v3 speech recognition (FluidAudio, Neural Engine) → deterministic vocabulary/spoken-forms pass → Apple Foundation Models cleanup (per sentence, alignment-gated) → text injection (Accessibility API with clipboard+⌘V fallback).
 

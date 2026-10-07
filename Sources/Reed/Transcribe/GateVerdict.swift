@@ -35,7 +35,8 @@ struct GateVerdict: Equatable {
     enum Fault: String, Equatable {
         /// A repeated content word was collapsed: emphasis, not a stumble.
         case emphasisRepeat
-        /// A structural deletion that reaches the end of the input.
+        /// A structural deletion that reaches the end of the input, or a
+        /// restart there that loses a word kept nowhere else.
         case truncation
         /// A structural deletion with no licence.
         case unlicensed

@@ -49,6 +49,24 @@ final class NumberNormalizationTests: XCTestCase {
         XCTAssertEqual(fmt("it cost ten ninety nine at the store"), "it cost ten ninety nine at the store")
     }
 
+    /// Field 2026-10-06: "four thousand dollars" came out as "$4 thousand".
+    /// Thousands are digits; a round million or billion keeps its word.
+    func testScaleWordsReadAsWrittenAmounts() {
+        XCTAssertEqual(fmt("the budget is four thousand dollars"), "the budget is $4,000")
+        XCTAssertEqual(fmt("the budget is 4 thousand dollars"), "the budget is $4,000")
+        XCTAssertEqual(fmt("the budget is 4,000 dollars"), "the budget is $4,000")
+        XCTAssertEqual(fmt("four point five thousand dollars"), "$4,500")
+        XCTAssertEqual(fmt("twenty five thousand dollars"), "$25,000")
+        XCTAssertEqual(fmt("four hundred thousand dollars"), "$400,000")
+        XCTAssertEqual(fmt("one thousand dollars"), "$1,000")
+        XCTAssertEqual(fmt("four million dollars"), "$4 million")
+        XCTAssertEqual(fmt("one point two million dollars"), "$1.2 million")
+        XCTAssertEqual(fmt("two billion dollars"), "$2 billion")
+        XCTAssertEqual(fmt("four million people"), "4 million people")
+        XCTAssertEqual(fmt("four million two hundred thousand people"), "4,200,000 people")
+        XCTAssertEqual(fmt("four thousand people"), "4,000 people")
+    }
+
     func testExistingFormsKeepPriority() {
         XCTAssertEqual(fmt("The invoice total is three thousand one hundred and sixty two dollars."),
                        "The invoice total is $3,162.")

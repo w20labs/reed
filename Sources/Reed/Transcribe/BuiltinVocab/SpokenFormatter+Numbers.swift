@@ -61,24 +61,26 @@ extension SpokenFormatter {
     // MARK: - currency
 
     /// "three thousand one hundred and sixty two dollars" → $3,162;
-    /// "one point two million dollars" → $1.2 million; "five dollars" → $5.
+    /// "four thousand dollars" → $4,000; "one point two million dollars" →
+    /// $1.2 million; "five dollars" → $5. Thousands are digits, millions and
+    /// billions keep the word (field 2026-10-06: "$4 thousand" is unreadable).
     static func currency(at i: Int, tokens: [VocabToken]) -> CorrectionPass.Edit? {
         guard let (intVal, used) = parseInt(at: i, tokens: tokens) else { return nil }
         var idx = i + used
-        var amount = String(intVal)
+        var decimals = ""
         if idx + 1 < tokens.count, tokens[idx].norm == "point",
            let firstDecimal = ones[tokens[idx + 1].norm] {
-            amount += ".\(firstDecimal)"; idx += 2
+            decimals = String(firstDecimal); idx += 2
             while idx < tokens.count, let digit = ones[tokens[idx].norm] {
-                amount += String(digit); idx += 1
+                decimals += String(digit); idx += 1
             }
         }
         var scale = ""
         if idx < tokens.count, ["thousand", "million", "billion"].contains(tokens[idx].norm) {
-            scale = " " + tokens[idx].norm; idx += 1
+            scale = tokens[idx].norm; idx += 1
         }
         if idx < tokens.count, ["dollars", "dollar"].contains(tokens[idx].norm) {
-            return CorrectionPass.Edit(first: i, last: idx, replacement: "$\(amount)\(scale)",
+            return CorrectionPass.Edit(first: i, last: idx, replacement: "$" + amount(intVal, decimals, scale: scale),
                                        pattern: "currency", domain: nil, rule: nil)
         }
         // The compound form: thousands, hundreds and "and" before "dollars".
@@ -88,6 +90,19 @@ extension SpokenFormatter {
                                        pattern: "currency", domain: nil, rule: nil)
         }
         return nil
+    }
+
+    /// (4, "5", "thousand") → "4,500"; (4, "", "million") → "4 million";
+    /// (4000, "", "") → "4,000".
+    private static func amount(_ whole: Int, _ decimals: String, scale: String) -> String {
+        if scale == "thousand" {
+            let moved = String(decimals.prefix(3)).padding(toLength: 3, withPad: "0", startingAt: 0)
+            let rest = decimals.dropFirst(3)
+            let shifted = whole * 1_000 + (Int(moved) ?? 0)
+            return grouped(shifted) + (rest.isEmpty ? "" : "." + rest)
+        }
+        let number = grouped(whole) + (decimals.isEmpty ? "" : "." + decimals)
+        return scale.isEmpty ? number : number + " " + scale
     }
 
     // MARK: - cardinals
@@ -182,8 +197,10 @@ extension SpokenFormatter {
         let percent = next == "percent"
         guard percent || value >= 10 else { return nil }
         let last = i + used - (percent ? 0 : 1)
+        // A round million keeps its word, as amounts do: "4 million people".
+        let digits = value >= 1_000_000 && value % 1_000_000 == 0 ? "\(value / 1_000_000) million" : grouped(value)
         return CorrectionPass.Edit(first: i, last: last,
-                                   replacement: grouped(value) + (percent ? "%" : ""),
+                                   replacement: digits + (percent ? "%" : ""),
                                    pattern: percent ? "percent" : "cardinal", domain: nil, rule: nil)
     }
 

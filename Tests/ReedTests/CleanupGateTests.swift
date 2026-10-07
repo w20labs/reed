@@ -149,6 +149,34 @@ final class CleanupGateTests: XCTestCase {
         }
     }
 
+    func testDroppingTheCorrectionAtTheEndRejects() {
+        // Field 2026-10-06: "…seven pm. Sorry, five pm." → "…seven pm." kept
+        // the wrong option. The deletion "sorry five pm" reached the end; the
+        // alignment slid its window onto "pm sorry five", whose first word is
+        // trivially "re-spoken" next, so the restart licence passed it.
+        let rejected: [(String, String)] = [
+            ("Meet at seven pm. Sorry, five pm.", "Meet at seven pm."),
+            ("Meet at 7:00 PM sorry, 5:00 PM.", "Meet at 7:00 PM."),
+            ("Send it to Bob tomorrow. No, Alice tomorrow.", "Send it to Bob tomorrow."),
+            // A trailing marker is not a cue — nothing follows it.
+            ("Do it. No.", "Do it."),
+            ("Ship it, no, no.", "Ship it.")
+        ]
+        for (input, output) in rejected {
+            XCTAssertNotNil(CleanupGate.rejection(input: input, output: output, repairHint: false), input)
+        }
+        let accepted: [(String, String)] = [
+            ("Meet at seven pm. Sorry, five pm.", "Meet at five pm."),
+            ("Ship it on Monday on Monday.", "Ship it on Monday."),
+            ("I want to go I want to go.", "I want to go."),
+            ("Can you tell me tell me", "Can you tell me"),
+            ("Thanks for the help, um.", "Thanks for the help.")
+        ]
+        for (input, output) in accepted {
+            XCTAssertNil(CleanupGate.rejection(input: input, output: output, repairHint: false), input)
+        }
+    }
+
     func testIntroducedNewlineRejects() {
         // 2026-08-25: a model-invented line break becomes an Enter keystroke
         // wherever the text lands; word alignment is whitespace-blind.

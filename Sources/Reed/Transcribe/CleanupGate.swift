@@ -174,6 +174,8 @@ enum CleanupGate {
             // The one restart rule (RestartLicence): shared with the rules
             // pass and seam assembly, so a restart the model deletes and a
             // restart the app collapses itself are the same thing.
+            // ...unless, at the end, it loses the correction's new option.
+            if RestartLicence.isRestart(span, tokens: inTok), losesNewOptionAtEnd(rawSpan, input: inTok, output: outTok) { record(licence: nil, fault: .truncation); spanRejection = spanRejection ?? .truncation; continue }
             if RestartLicence.isRestart(span, tokens: inTok) { record(licence: .restart, fault: nil); continue }
             var isStructural = false
             var emphasis = false
@@ -194,7 +196,7 @@ enum CleanupGate {
                     // Auxiliaries and negations can't be emphasis either:
                     // "hasn't hasn't been", "is is" (round 2).
                     // Nor can a doubled marker: "no, no, actually" is one cue.
-                    if functionWords.contains(word) || auxiliaries.contains(word) || markers.contains(word)
+                    if functionWords.contains(word) || auxiliaries.contains(word) || isCue(i, inTok)
                         || inRaw[i].hasSuffix("n't") { continue }
                     emphasis = true; break
                 }
@@ -206,7 +208,7 @@ enum CleanupGate {
                     let lo = max(0, i - 4), hi = min(inTok.count - 1, i + 4)
                     if (lo...hi).contains(where: { $0 != i && inTok[$0] == word }) { continue }
                 }
-                if markers.contains(word) { continue }
+                if isCue(i, inTok) { continue }
                 isStructural = true
             }
             if emphasis { record(licence: nil, fault: .emphasisRepeat); spanRejection = spanRejection ?? .emphasisRepeat; continue }
@@ -237,46 +239,20 @@ enum CleanupGate {
 
     // MARK: - Pieces
 
-    /// Protected tokens gone from the proposal. An occurrence the proposal
-    /// deleted whole, inside spans the gate licensed as a correction or a
-    /// restart, is the abandoned option going, not a reformat: "at 7:00 PM.
-    /// No, at 5:00 PM" may lose "7:00" (field 2026-10-06). Anything else
-    /// gone, or kept only in part, still counts.
-    private static func unexcusedProtected(input: String, output: String, tokens: [GateVerdict.Token],
-                                           deletions: [GateVerdict.Deletion]) -> [String] {
-        // The classified window (an equivalent reading of the same edit), and
-        // never one reaching the end: that is the wrong option kept.
-        let excused = Set(deletions.filter {
-            ($0.licence == .structural || $0.licence == .restart) && !$0.window.contains(tokens.count - 1)
-        }.flatMap { Array($0.window) })
-        return protectedRanges(input).compactMap { range in
-            let token = String(input[range])
-            guard !output.contains(token) else { return nil }
-            let covering = tokens.indices.filter { tokens[$0].characters.overlaps(range) }
-            return !covering.isEmpty && covering.allSatisfy(excused.contains) ? nil : token
-        }
+    /// A marker is a correction cue only with something after it: a
+    /// trailing "No." is content ("Do it. No.").
+    private static func isCue(_ i: Int, _ tokens: [String]) -> Bool {
+        markers.contains(tokens[i]) && i < tokens.count - 1
     }
 
-    /// Whitespace tokens, edge quotes/sentence punctuation trimmed, that
-    /// carry structure the model must not touch.
-    static func protectedTokens(_ text: String) -> [String] {
-        protectedRanges(text).map { String(text[$0]) }
-    }
-
-    /// Where each protected token sits in `text`, in order.
-    static func protectedRanges(_ text: String) -> [Range<String.Index>] {
-        text.split(whereSeparator: \.isWhitespace).compactMap { raw in
-            var token = Substring(raw)
-            while let first = token.first, "\"'“”‘’(".contains(first) { token = token.dropFirst() }
-            while let last = token.last, "\"'”’),.!?;:".contains(last) { token = token.dropLast() }
-            guard token.count > 1 else { return nil }
-            let hasDigit = token.contains(where: \.isNumber)
-            let hasLetter = token.contains(where: \.isLetter)
-            let structural = token.contains(".") || token.contains("/")
-                || token.contains("@") || token.contains(":")
-            guard structural || (hasDigit && hasLetter) else { return nil }
-            return token.startIndex..<token.endIndex
-        }
+    /// A restart deletion reaching the end may only lose words kept
+    /// elsewhere: a window slid over an LCS tie always "re-speaks" its first
+    /// word, and "seven pm. Sorry, five pm." → "seven pm." lost the new
+    /// option (field 2026-10-06). Markers and fillers do not count.
+    private static func losesNewOptionAtEnd(_ raw: Range<Int>, input: [String], output: [String]) -> Bool {
+        guard raw.contains(input.count - 1) else { return false }
+        let kept = Set(output)
+        return raw.contains { !kept.contains(input[$0]) && !markers.contains(input[$0]) && !fillers.contains(input[$0]) }
     }
 
     private static func rawTokens(_ text: String) -> [String] {

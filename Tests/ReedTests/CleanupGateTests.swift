@@ -177,6 +177,30 @@ final class CleanupGateTests: XCTestCase {
         }
     }
 
+    func testAnApologyIsNotACorrectionCue() {
+        // Field 2026-10-07: "I'm sorry, I can't make it today." lost "I'm
+        // sorry" — "sorry" licensed its own deletion as a correction marker.
+        let rejected: [(String, String)] = [
+            ("I'm sorry, I can't make it today.", "I can't make it today."),
+            ("I'm sorry I can't make it today.", "I can't make it today."),
+            ("Sorry, I'm running late.", "I'm running late."),
+            ("I am so sorry, the build broke.", "The build broke."),
+            ("We're really sorry about the delay.", "We're about the delay."),
+            ("Bob, sorry for the delay, here it is.", "Bob, here it is.")
+        ]
+        for (input, output) in rejected {
+            XCTAssertNotNil(CleanupGate.rejection(input: input, output: output, repairHint: false), input)
+        }
+        // Between two options it is still the cue.
+        let accepted: [(String, String)] = [
+            ("Let's meet Tuesday, sorry, Wednesday at three.", "Let's meet Wednesday at three."),
+            ("Send it to Bob tomorrow. Sorry, Alice tomorrow.", "Send it to Alice tomorrow.")
+        ]
+        for (input, output) in accepted {
+            XCTAssertNil(CleanupGate.rejection(input: input, output: output, repairHint: false), input)
+        }
+    }
+
     func testIntroducedNewlineRejects() {
         // 2026-08-25: a model-invented line break becomes an Enter keystroke
         // wherever the text lands; word alignment is whitespace-blind.

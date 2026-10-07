@@ -51,6 +51,10 @@ enum LocalCleanup {
     /// which needs the model's judgement to tell tic from content).
     static func applyWithPath(to text: String) async -> Outcome {
         guard !text.isEmpty else { return Outcome(text: text, path: .raw, reason: nil) }
+        if tier == .off { return Outcome(text: text, path: .raw, reason: nil) }
+        // An end-of-sentence value correction, resolved by rule before either
+        // tier: the model keeps the abandoned option there (TailCorrection).
+        let text = TailCorrection.apply(text)
         switch tier {
         case .off:
             return Outcome(text: text, path: .raw, reason: nil)

@@ -2,6 +2,8 @@
 
 Reed Dictation (Reed) is free, local-only voice dictation for macOS. Hold a shortcut, talk, release — text appears at the cursor. Download and help: [reed.w20.ai](https://reed.w20.ai).
 
+![Reed Dictation in Notes: a "Listening" pill appears while the shortcut is held, then the cleaned-up sentence lands at the cursor](docs/media/reed-dictation-demo.gif)
+
 Pipeline (fully on-device): hotkey → AVAudioEngine capture → on-device denoise (FastEnhancer) → Parakeet v3 speech recognition (FluidAudio, Neural Engine) → deterministic vocabulary/spoken-forms pass → Apple Foundation Models cleanup (per sentence, alignment-gated) → text injection (Accessibility API with clipboard+⌘V fallback).
 
 Dictation stays on the Mac: no audio, no transcripts and no network in the dictation path (enforced by the app's network gate, `GateURLProtocol`). The network is used for two things only: downloading the speech model (from Hugging Face) and checking for updates (Sparkle, from Reed's release bucket). Like any web request, those carry the Mac's IP address, and the update check identifies the app and Sparkle versions in its user agent. Reed has no usage analytics, no crash reporting, no accounts and no cloud features.

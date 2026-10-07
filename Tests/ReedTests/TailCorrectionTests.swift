@@ -11,6 +11,8 @@ final class TailCorrectionTests: XCTestCase {
             ("Let's meet at 7:00 PM. Sorry, 5:00 PM.", "Let's meet at 5:00 PM."),
             ("Meet at 7:00 PM, sorry, at 5:00 PM.", "Meet at 5:00 PM."),
             ("The budget is $3,000, sorry, $4,000.", "The budget is $4,000."),
+            ("The budget is $3 thousand. Sorry, $4 thousand.", "The budget is $4 thousand."),
+            ("Raise $1.2 million, I mean $1.5 million.", "Raise $1.5 million."),
             ("Book the table for six, no wait, eight.", "Book the table for eight."),
             ("The code is 1234, no, 1243.", "The code is 1243."),
             ("Call me on Tuesday, I mean Wednesday.", "Call me on Wednesday."),
@@ -31,6 +33,7 @@ final class TailCorrectionTests: XCTestCase {
             "Let's meet Tuesday, sorry, Wednesday at three.", // the tail is more than a value
             "It's not Tuesday, it's Wednesday.",             // no cue
             "I'm sorry, I can't make it today.",
+            "I'm sorry, $4 thousand is too much.",
             "No, I think we should wait until Monday.",
             "Do it now. No.",                                // nothing after the cue
             "I have two, no, three kids.",

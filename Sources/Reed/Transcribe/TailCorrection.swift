@@ -24,7 +24,7 @@ enum TailCorrection {
         var pattern: String {
             switch self {
             case .time: return #"^\d{1,2}(?::\d{2})?\s?(?:[ap]\.?m\.?)$|^\d{1,2}:\d{2}$"#
-            case .amount: return #"^[$€£]\d[\d,]*(?:\.\d+)?$"#
+            case .amount: return #"^[$€£]\d[\d,]*(?:\.\d+)?(?:\s(?:thousand|million|billion))?$"#
             case .number: return #"^\d[\d,]*(?:\.\d+)?%?$|^(?:one|two|three|four|five|six|seven|eight|nine|ten)$"#
             case .weekday: return #"^(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday)$"#
             case .email: return #"^[^\s@]+@[^\s@]+\.[^\s@]+$"#

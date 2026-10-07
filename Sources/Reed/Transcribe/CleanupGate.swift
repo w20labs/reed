@@ -168,7 +168,7 @@ enum CleanupGate {
                 deletions.append(.init(tokens: rawSpan, window: span, characters: characters, licence: licence, fault: fault))
             }
             // A leading discourse opener ("so", "but", "okay so") may go.
-            if span.lowerBound == 0, span.allSatisfy({ openers.contains(inTok[$0]) || markers.contains(inTok[$0]) }) {
+            if span.lowerBound == 0, span.allSatisfy({ openers.contains(inTok[$0]) || isCue($0, inTok) }) {
                 record(licence: .opener, fault: nil); continue
             }
             // The one restart rule (RestartLicence): shared with the rules
@@ -240,10 +240,22 @@ enum CleanupGate {
     // MARK: - Pieces
 
     /// A marker is a correction cue only with something after it: a
-    /// trailing "No." is content ("Do it. No.").
+    /// trailing "No." is content ("Do it. No."). And "sorry" is a cue only
+    /// between two options: an apology is content ("I'm sorry, I can't make
+    /// it", "Sorry, I'm late", "really sorry about the delay" — field
+    /// 2026-10-07, the model deleted "I'm sorry" and the gate let it).
     private static func isCue(_ i: Int, _ tokens: [String]) -> Bool {
-        markers.contains(tokens[i]) && i < tokens.count - 1
+        guard markers.contains(tokens[i]), i < tokens.count - 1 else { return false }
+        guard tokens[i] == "sorry" else { return true }
+        return i > 0 && !apologyLeads.contains(tokens[i - 1]) && !apologyObjects.contains(tokens[i + 1])
     }
+    /// Folded words that make the next "sorry" an apology ("I'm", "so", "we're").
+    private static let apologyLeads: Set<String> = [
+        "im", "am", "so", "very", "really", "truly", "terribly", "awfully", "were", "are", "is", "was",
+        "be", "been", "feel", "felt", "youre", "theyre", "hes", "shes", "its", "say"
+    ]
+    /// Words after "sorry" that make it an apology ("sorry for", "sorry about").
+    private static let apologyObjects: Set<String> = ["for", "about", "to", "that"]
 
     /// A restart deletion reaching the end may only lose words kept
     /// elsewhere: a window slid over an LCS tie always "re-speaks" its first
@@ -252,7 +264,7 @@ enum CleanupGate {
     private static func losesNewOptionAtEnd(_ raw: Range<Int>, input: [String], output: [String]) -> Bool {
         guard raw.contains(input.count - 1) else { return false }
         let kept = Set(output)
-        return raw.contains { !kept.contains(input[$0]) && !markers.contains(input[$0]) && !fillers.contains(input[$0]) }
+        return raw.contains { !kept.contains(input[$0]) && !isCue($0, input) && !fillers.contains(input[$0]) }
     }
 
     private static func rawTokens(_ text: String) -> [String] {
@@ -322,7 +334,7 @@ enum CleanupGate {
     private static func spanNearMarker(_ span: Range<Int>, tokens: [String]) -> Bool {
         let lo = max(0, span.lowerBound - 1)
         let hi = min(tokens.count - 1, span.upperBound)
-        return (lo...hi).contains { markers.contains(tokens[$0]) }
+        return (lo...hi).contains { isCue($0, tokens) }
     }
 
     /// The one alignment (LCS, the traceback the gate has always used):

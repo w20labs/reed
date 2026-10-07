@@ -3,7 +3,8 @@ import Foundation
 /// Everything the gate found between an input and a proposal — every
 /// deleted span with the licence that explains it or the fault it
 /// carries, every added word, the negation and modal accounting, the
-/// protected tokens that vanished, the newlines invented — and
+/// protected tokens that vanished outside a licensed deletion, the
+/// newlines invented — and
 /// `rejection`, the first failing check in the gate's fixed order,
 /// exactly as `rejection(input:output:repairHint:)` has always
 /// returned it (cleanup decision 3, step 1, 2026-09-08: a structured

@@ -116,6 +116,39 @@ final class CleanupGateTests: XCTestCase {
             repairHint: false))
     }
 
+    func testCorrectionMayDropTheAbandonedProtectedToken() {
+        // Field 2026-10-06: the model's correct fix was refused because the
+        // abandoned time is a protected token. Deleting it whole inside a
+        // licensed correction or restart is not a reformat.
+        let accepted: [(String, String)] = [
+            ("Let's meet at 7:00 PM. No, no, actually, let's meet on 5:00 PM, at 5:00 PM.", "Let's meet at 5:00 PM."),
+            ("Let's meet at 7:00 PM. Scratch that, let's meet at 5:00 PM.", "Let's meet at 5:00 PM."),
+            ("Send it to bob@example.com. Sorry, I mean alice@example.com.", "Send it to alice@example.com."),
+            ("File the I-485 file the I-130 today.", "File the I-130 today.")
+        ]
+        for (input, output) in accepted {
+            let verdict = CleanupGate.verdict(input: input, output: output, repairHint: false)
+            XCTAssertNil(verdict.rejection, input)
+            XCTAssertEqual(verdict.protectedMissing, [], input)
+        }
+    }
+
+    func testProtectedTokenLostOutsideALicensedDeletionStillRejects() {
+        let rejected: [(String, String)] = [
+            // No correction marker: the time just vanished.
+            ("Let's meet at 7:00 PM and then lunch.", "Let's meet and then lunch."),
+            // Wrong option kept: the deletion reaches the end, unlicensed.
+            ("Meet at 7:00 PM. Sorry, 5:00 PM.", "Meet at 7:00 PM."),
+            // The kept option reformatted beside a licensed deletion.
+            ("Send it to bob@example.com. Sorry, I mean alice@example.com.", "Send it to alice example com."),
+            // The abandoned option reformatted, not deleted.
+            ("Meet at 7:00 PM. Scratch that, at 5:00 PM.", "Meet at 7 00 PM, at 5:00 PM.")
+        ]
+        for (input, output) in rejected {
+            XCTAssertEqual(CleanupGate.rejection(input: input, output: output, repairHint: false), .protectedToken, input)
+        }
+    }
+
     func testIntroducedNewlineRejects() {
         // 2026-08-25: a model-invented line break becomes an Enter keystroke
         // wherever the text lands; word alignment is whitespace-blind.

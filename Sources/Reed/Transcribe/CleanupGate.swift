@@ -134,7 +134,7 @@ enum CleanupGate {
         // or both a digit and a letter ("I-485", "H-1B", "83(b)") — must
         // survive byte-identical. Word-level alignment can't catch the model
         // reformatting "I-485" into "I 485"; the tokens align too well.
-        let protectedMissing = protectedTokens(input).filter { !output.contains($0) }
+        // Judged after the spans (below): a deletion is not a reformat.
 
         // 1. No additions: every output word was spoken. The DECISION is the
         // frequency test it has always been; the edit map's additions are the
@@ -193,7 +193,9 @@ enum CleanupGate {
                 if repeatsNeighbor {
                     // Auxiliaries and negations can't be emphasis either:
                     // "hasn't hasn't been", "is is" (round 2).
-                    if functionWords.contains(word) || auxiliaries.contains(word) || inRaw[i].hasSuffix("n't") { continue }
+                    // Nor can a doubled marker: "no, no, actually" is one cue.
+                    if functionWords.contains(word) || auxiliaries.contains(word) || markers.contains(word)
+                        || inRaw[i].hasSuffix("n't") { continue }
                     emphasis = true; break
                 }
                 // Near repeat: a duplicated function word within a few tokens
@@ -221,6 +223,7 @@ enum CleanupGate {
             if structuralSpans > maxStructuralSpans { record(licence: nil, fault: .tooMany); spanRejection = spanRejection ?? .multipleDeletions; continue }
             record(licence: .structural, fault: nil)
         }
+        let protectedMissing = unexcusedProtected(input: input, output: output, tokens: inputTokens, deletions: deletions)
 
         let rejection: Rejection?
         if !protectedMissing.isEmpty { rejection = .protectedToken }
@@ -234,9 +237,34 @@ enum CleanupGate {
 
     // MARK: - Pieces
 
+    /// Protected tokens gone from the proposal. An occurrence the proposal
+    /// deleted whole, inside spans the gate licensed as a correction or a
+    /// restart, is the abandoned option going, not a reformat: "at 7:00 PM.
+    /// No, at 5:00 PM" may lose "7:00" (field 2026-10-06). Anything else
+    /// gone, or kept only in part, still counts.
+    private static func unexcusedProtected(input: String, output: String, tokens: [GateVerdict.Token],
+                                           deletions: [GateVerdict.Deletion]) -> [String] {
+        // The classified window (an equivalent reading of the same edit), and
+        // never one reaching the end: that is the wrong option kept.
+        let excused = Set(deletions.filter {
+            ($0.licence == .structural || $0.licence == .restart) && !$0.window.contains(tokens.count - 1)
+        }.flatMap { Array($0.window) })
+        return protectedRanges(input).compactMap { range in
+            let token = String(input[range])
+            guard !output.contains(token) else { return nil }
+            let covering = tokens.indices.filter { tokens[$0].characters.overlaps(range) }
+            return !covering.isEmpty && covering.allSatisfy(excused.contains) ? nil : token
+        }
+    }
+
     /// Whitespace tokens, edge quotes/sentence punctuation trimmed, that
     /// carry structure the model must not touch.
     static func protectedTokens(_ text: String) -> [String] {
+        protectedRanges(text).map { String(text[$0]) }
+    }
+
+    /// Where each protected token sits in `text`, in order.
+    static func protectedRanges(_ text: String) -> [Range<String.Index>] {
         text.split(whereSeparator: \.isWhitespace).compactMap { raw in
             var token = Substring(raw)
             while let first = token.first, "\"'“”‘’(".contains(first) { token = token.dropFirst() }
@@ -247,7 +275,7 @@ enum CleanupGate {
             let structural = token.contains(".") || token.contains("/")
                 || token.contains("@") || token.contains(":")
             guard structural || (hasDigit && hasLetter) else { return nil }
-            return String(token)
+            return token.startIndex..<token.endIndex
         }
     }
 

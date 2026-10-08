@@ -1,142 +1,82 @@
 # Reed Dictation
 
-Reed Dictation (Reed) is free, local-only voice dictation for macOS. Hold a shortcut, talk, release — text appears at the cursor. Download and help: [reed.w20.ai](https://reed.w20.ai).
+**Free, private voice dictation for Mac.** Hold a shortcut, talk, release: clean text appears at your cursor, in any app. Everything runs on your Mac.
+
+<p>
+  <a href="https://reed.w20.ai/download/Reed.dmg"><img src="https://img.shields.io/badge/Download-Reed%20for%20Mac-2f6feb?style=for-the-badge&logo=apple&logoColor=white" alt="Download Reed for Mac"></a>
+</p>
+
+[![Latest release](https://img.shields.io/github/v/release/w20labs/reed?label=release)](https://github.com/w20labs/reed/releases/latest)
+![macOS 14+](https://img.shields.io/badge/macOS-14%2B-555)
+![Apple Silicon](https://img.shields.io/badge/Apple%20Silicon-M1%20or%20newer-555)
+![On-device](https://img.shields.io/badge/audio-never%20leaves%20your%20Mac-2ea44f)
+[![License: Apache 2.0](https://img.shields.io/badge/license-Apache%202.0-blue)](LICENSE)
+
+## You say, Reed types
+
+| You say | Reed types |
+|---|---|
+| "Um, so I think we should, uh, ship it on Friday." | So I think we should ship it on Friday. |
+| "Let's meet at seven PM, sorry, five PM." | Let's meet at 5:00 PM. |
+| "Call me on Tuesday, I mean Wednesday." | Call me on Wednesday. |
+| "The invoice came in at three thousand one hundred and sixty two dollars, due on the fifteenth of March." | The invoice came in at $3,162, due on the 15th of March. |
+| "I'm sorry, I can't make it today." | I'm sorry, I can't make it today. |
+
+Real output of Reed 0.3.2 on a Mac with Apple Intelligence, from speech made with the Mac's built-in voice. Fillers go, self-corrections resolve, numbers, amounts and dates are written the way you would type them, and what you meant to say stays. Without Apple Intelligence, a rules-based cleanup does the same kind of tidying.
+
+## Why Reed
+
+- **Free, with no account.** No subscription, no sign-in, no trial.
+- **Private by design.** Audio and text never leave your Mac. There is no cloud transcription, no analytics and no crash reporting.
+- **Fast.** Text appears about a second after you let go.
+- **Works everywhere you type.** Mail, Messages, Slack, Notes, browsers, editors: anywhere there is a text cursor.
+- **Open source.** Every line that touches your voice is in this repository, under Apache 2.0.
+
+Comparing options? See Reed next to [Wispr Flow](https://reed.w20.ai/wispr-flow-alternative), [Superwhisper](https://reed.w20.ai/superwhisper-alternative) and [Apple Dictation](https://reed.w20.ai/apple-dictation-alternative).
+
+## Install
+
+1. [Download Reed](https://reed.w20.ai/download/Reed.dmg) (or take the DMG from [GitHub Releases](https://github.com/w20labs/reed/releases/latest)) and drag it to Applications.
+2. Open it. A short setup asks for the microphone, for Accessibility (so Reed can type at your cursor), and for your shortcut (the default is holding <kbd>⌃</kbd><kbd>⌥</kbd>).
+3. Reed downloads its speech model once (about 461 MB), then you try a first dictation right in the setup window.
+
+Requires macOS 14 or later on Apple Silicon (M1 or newer). AI cleanup needs macOS 26 with Apple Intelligence; other Macs use the rules-based cleanup automatically. Reed checks for updates itself.
+
+## Privacy you can check
+
+Dictation has no network path: no audio, no transcripts, no requests. The app's network gate (`GateURLProtocol`) enforces it, and you can confirm it with any network monitor, such as Little Snitch.
+
+The network is used for two things only: downloading the speech model (from Hugging Face) and checking for updates (Sparkle, from Reed's release bucket). Like any web request, those carry your Mac's IP address, and the update check names the app and Sparkle versions in its user agent. Details: [what Reed collects](https://reed.w20.ai/legal/what-we-collect).
+
+## How it works
 
 <p align="center">
   <img src="docs/media/how-reed-works.svg" width="860" alt="How Reed works: hold the shortcut and speak; Reed records, splits the recording at pauses, and sends each segment through on-device denoising, Parakeet v3 recognition and cleanup while you keep talking; on release the segments are joined in order and typed at your cursor. Nothing leaves the Mac.">
 </p>
 
-Pipeline (fully on-device): hotkey → AVAudioEngine capture → on-device denoise (FastEnhancer) → Parakeet v3 speech recognition (FluidAudio, Neural Engine) → deterministic vocabulary/spoken-forms pass → Apple Foundation Models cleanup (per sentence, alignment-gated) → text injection (Accessibility API with clipboard+⌘V fallback).
+While you talk, Reed splits the recording at pauses and processes each piece on the Mac: noise reduction, speech recognition with NVIDIA's Parakeet v3 on the Neural Engine, a deterministic pass for numbers and vocabulary, then cleanup with Apple's on-device Foundation Models. Every model edit is checked word by word against what you said, and refused if it rewrites your words instead of tidying them. On release, the pieces are joined and typed at your cursor.
 
-Dictation stays on the Mac: no audio, no transcripts and no network in the dictation path (enforced by the app's network gate, `GateURLProtocol`). The network is used for two things only: downloading the speech model (from Hugging Face) and checking for updates (Sparkle, from Reed's release bucket). Like any web request, those carry the Mac's IP address, and the update check identifies the app and Sparkle versions in its user agent. Reed has no usage analytics, no crash reporting, no accounts and no cloud features.
+## FAQ
 
-Target end-to-end latency: ~1 second.
+**Which languages does it understand?** English, today. Other languages are not supported yet.
 
-## Requirements
+**Does it work offline?** Yes. After the one-time model download, dictation and cleanup need no connection.
 
-- macOS 14+ (the AI cleanup tier needs macOS 26 with Apple Intelligence; earlier systems fall back to the rules-based cleanup automatically)
-- Apple Silicon only — the build is arm64 (the on-device speech model does not run on Intel, and an Intel Mac cannot open the app)
-- **Xcode 15.4+ installed in `/Applications/Xcode.app`** — required because `KeyboardShortcuts` uses `#Preview` macros that need the full Xcode toolchain. CommandLineTools alone is insufficient. The build script auto-detects and routes through Xcode if present.
-- An Apple Developer / Apple Development code-signing identity in your login keychain (so TCC grants persist across rebuilds). The build script auto-detects and falls back to ad-hoc signing if none is present.
+**Can I use the Fn key?** Not alone. Use a modifier hold (like the default <kbd>⌃</kbd><kbd>⌥</kbd>) or a modifier plus a letter.
 
-No API keys: transcription and cleanup run entirely on-device.
+**Does it work in Electron and web apps?** Yes. Where an app does not accept typed text through Accessibility, Reed pastes instead and then restores your previous clipboard (unless you copied something new in the meantime).
 
-## Build
+**Do I see text while I talk?** Not yet. The menu bar icon shows recording and processing, and the text appears when you let go.
 
-```sh
-./build-app.sh
-```
-
-This produces `Reed.app` in the project root. The `.app` wrapper is required for macOS to associate microphone + accessibility permissions with the right binary identity.
-
-To install:
-
-```sh
-cp -R Reed.app /Applications/
-open /Applications/Reed.app
-```
-
-## First run
-
-Onboarding walks through seven steps on first launch:
-
-1. **Welcome** — an introduction; there is nothing to accept (Reed is Apache-licensed).
-2. **Microphone** — grant access. If the current input is Bluetooth, the step offers a faster built-in or wired mic.
-3. **Accessibility** — turn Reed on in System Settings so it can insert text at the cursor.
-4. **Hotkey** — keep the default `⌃⌥` hold or record your own shortcut.
-5. **Speech model** — download Parakeet v3 (~461 MB). It downloads once, is compiled for your Mac on first load, and lives under Application Support; Continue unlocks only once it has loaded.
-6. **Cleanup** — keep cleanup on (Apple Intelligence where available, a rules pass otherwise) or turn it off.
-7. **You're done** — try a first dictation in the test field.
-
-Change the shortcut later under Settings → Dictation.
-
-## Use
-
-Hold the shortcut, speak, release. Within ~1 second the text appears at your cursor.
-
-The menubar icon reflects state: idle, recording, transcribing/writing.
-
-## Project layout
-
-```
-reed/
-├── Package.swift                    SPM manifest
-├── Info.plist                       bundle metadata + permission usage strings
-├── build-app.sh                     swift build → arm64 .app bundle + codesign
-├── design/hud-design-system.html    the canonical UI "Figma" — source of truth for all UI work
-├── scripts/design/render-block.sh   renders one block of it to PNG (a design change is a grep AND a render)
-├── scripts/qa/                      the local QA page (qa.sh), the local-review opt-in (review.sh on|off|status) and its bench (review_bench.py)
-├── docs/bench/baselines.json        committed performance ceilings the benches read
-├── legal/                           third-party notice texts and their provenance
-├── Tools/vocabulary/                vocabulary.yaml → generate.py → VocabularyData.generated.swift
-├── Sources/Reed/
-│   ├── ReedApp.swift                @main, MenuBarExtra
-│   ├── Coordinator*.swift           pipeline orchestration (@MainActor)
-│   ├── Recorder/                    AVAudioEngine capture, keep-warm, hotkey field
-│   ├── LocalASR/                    Parakeet client (the speech model), model store/downloads, AI cleanup
-│   ├── Transcribe/                  sentence chunker, cleanup gate, built-in vocabulary
-│   ├── Inject/                      AX + clipboard text injection
-│   ├── Onboarding/                  first-run flow
-│   ├── Settings/                    settings panes
-│   └── Pipeline/                    network gate (GateURLProtocol, blocked-request tally), debug menu, overlap session
-└── Tests/ReedTests/
-```
-
-## Known limitations
-
-- Hotkey can't bind to bare Fn (KeyboardShortcuts limitation; modifier+letter combos or modifier holds only).
-- No streaming UI during transcription — the user sees the menubar icon change but no partial text.
-- AX injection path doesn't work in some Electron / web apps; clipboard fallback handles those.
-- The clipboard fallback restores your previous clipboard afterwards (skipped if you copied something new in the meantime).
+**Does it run on Intel Macs?** No. The speech model needs Apple Silicon.
 
 ## Contributing
 
-Reed does not accept unsolicited pull requests. Report reproducible bugs with the bug template, and bring ideas and questions to Discussions. Read [CONTRIBUTING.md](CONTRIBUTING.md) first.
+Bug reports and ideas are welcome. Report reproducible bugs with the bug template, and bring ideas and questions to [Discussions](https://github.com/w20labs/reed/discussions). Reed's maintainers implement accepted changes themselves, so unsolicited pull requests are closed; [CONTRIBUTING.md](CONTRIBUTING.md) explains how to take part.
 
-If you are an AI agent helping with this repository, read [AGENTS.md](AGENTS.md) before making changes and read [CONTRIBUTING.md](CONTRIBUTING.md) before opening issues or pull requests.
+To build Reed, run the tests, or find your way around the code, see [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).
 
-Project rules for reviews and verification live in [CLAUDE.md](CLAUDE.md); they apply to people and to AI-assisted sessions alike. Every pull request uses the template in `.github/PULL_REQUEST_TEMPLATE.md`, which carries the evidence for each review finding closed: reproduced before, root cause as a class, sibling sites checked, reproduced after, and the authority it was verified against.
-
-## Regression testing
-
-Run the standard suite with the Xcode toolchain:
-
-```sh
-env DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun --toolchain XcodeDefault swift test
-env PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s scripts/qa -p 'test_*.py'
-```
-
-Some benches read an audio corpus of recordings and transcripts. That corpus is
-deliberately **not** in this repository: it is personal dictation, and nothing
-from it may be committed to make a test pass. Those benches skip, by name, when
-it is absent. To run them, point `REED_VOICE_ROOT` at your own corpus, or place
-one in `voice-tests/` at the repository root:
-
-```sh
-env REED_VOICE_ROOT=/path/to/voice-tests DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer \
-  xcrun --toolchain XcodeDefault swift test
-```
-
-Everything else runs without it. Tests that check a property rather than a
-recording carry their own fixtures, so they run everywhere.
-
-The permanent PR #322 review cases live in `CleanupReviewCases.swift` and
-`CleanupReviewRegressionTests.swift`. They cover restarts, negations, emphasis,
-chains, sentence/paragraph boundaries, delimiters, quotation boundaries, casing,
-and pause assembly. They run automatically in the standard suite and CI, and in
-the QA page's **Unit · Text pipeline** row. To run just these regressions:
-
-```sh
-env DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun --toolchain XcodeDefault swift test --filter CleanupReviewRegressionTests
-```
-
-Restart an already-running QA server after pulling new tests so it rebuilds its inventory.
-
-These tests never record audio or inject text. The accepted-model post-pass test
-uses a stub, but the production routing still requires macOS 26 with Apple
-Intelligence available; that one test reports a skip elsewhere. The rules and
-assembly checks run on every supported test host. This is a deterministic
-regression suite, not a substitute for the real-model quality/audio benches.
+If you are an AI agent helping with this repository, read [AGENTS.md](AGENTS.md) before making changes and [CONTRIBUTING.md](CONTRIBUTING.md) before opening issues or pull requests. Project rules for reviews and verification live in [CLAUDE.md](CLAUDE.md); they apply to people and to AI-assisted sessions alike, and every pull request uses `.github/PULL_REQUEST_TEMPLATE.md`.
 
 ## License
 

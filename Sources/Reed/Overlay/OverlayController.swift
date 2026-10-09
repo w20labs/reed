@@ -135,6 +135,7 @@ final class OverlayController {
 
         if panel.isVisible && panel.alphaValue > 0.95 { return }
         panel.alphaValue = panel.isVisible ? panel.alphaValue : 0
+        viewModel.isOnScreen = true
         panel.orderFrontRegardless()
         NSAnimationContext.runAnimationGroup { ctx in
             ctx.duration = 0.16
@@ -151,10 +152,18 @@ final class OverlayController {
                 ctx.allowsImplicitAnimation = true
                 panel.animator().alphaValue = 0
             },
-            completionHandler: {
-                if panel.alphaValue < 0.05 { panel.orderOut(nil) }
+            completionHandler: { [weak self] in
+                guard panel.alphaValue < 0.05 else { return }
+                panel.orderOut(nil)
+                self?.didOrderOut()
             }
         )
+    }
+
+    /// The panel is gone from screen: unmount the pill so nothing in it keeps
+    /// animating until the next dictation.
+    func didOrderOut() {
+        viewModel.isOnScreen = false
     }
 
     private func scheduleHide(after seconds: TimeInterval) {

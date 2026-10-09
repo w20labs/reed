@@ -9,6 +9,11 @@ struct OverlayView: View {
     private let secondary = Color.white.opacity(0.5)
 
     var body: some View {
+        // Hidden panel, empty tree: nothing left mounted can animate.
+        if viewModel.isOnScreen { pill }
+    }
+
+    private var pill: some View {
         HStack(spacing: 8) {
             iconView
                 .frame(height: 24)

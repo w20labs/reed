@@ -204,8 +204,18 @@ final class OverlayController {
             .fullScreenAuxiliary,
             .ignoresCycle,
         ]
-        panel.contentView = NSHostingView(rootView: OverlayView(viewModel: viewModel))
+        panel.contentView = makeContentView()
         self.panel = panel
+    }
+
+    /// The pill centres itself in the fixed panel, so its content must never
+    /// size the panel: hidden, the view is empty and would collapse the panel
+    /// to 0×0, and the next show would centre that empty frame (the pill
+    /// appears right of centre, then jumps left as it resizes).
+    func makeContentView() -> NSHostingView<OverlayView> {
+        let host = NSHostingView(rootView: OverlayView(viewModel: viewModel))
+        host.sizingOptions = []
+        return host
     }
 
     /// Position centred horizontally and ~80 pt below the top of whichever

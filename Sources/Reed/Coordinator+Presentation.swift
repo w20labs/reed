@@ -77,11 +77,7 @@ extension Coordinator {
             )
             // When the window closes, revert to .accessory so the app
             // disappears from the Dock again (it's a menubar app).
-            NotificationCenter.default.addObserver(
-                forName: NSWindow.willCloseNotification,
-                object: window,
-                queue: .main
-            ) { _ in
+            releaseOnClose(window, from: \.settingsWindow) {
                 NSApp.setActivationPolicy(.accessory)
             }
             settingsWindow = window

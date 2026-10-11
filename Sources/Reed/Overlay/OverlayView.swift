@@ -9,11 +9,6 @@ struct OverlayView: View {
     private let secondary = Color.white.opacity(0.5)
 
     var body: some View {
-        // Hidden panel, empty tree: nothing left mounted can animate.
-        if viewModel.isOnScreen { pill }
-    }
-
-    private var pill: some View {
         HStack(spacing: 8) {
             iconView
                 .frame(height: 24)
@@ -112,7 +107,12 @@ struct OverlayView: View {
 
     @ViewBuilder
     private var iconView: some View {
-        if isPreparingMic {
+        // The pill stays mounted while the panel is hidden (emptying it made
+        // the next show lay it out from nothing: off-centre, then a jump), but
+        // its icons are the parts that animate, so none is mounted then.
+        if !viewModel.isOnScreen {
+            EmptyView()
+        } else if isPreparingMic {
             // Same spinner as the other "wait for a prerequisite" state
             // (Preparing speech model…) — a waveform here would claim the mic
             // is hearing something when it physically cannot.

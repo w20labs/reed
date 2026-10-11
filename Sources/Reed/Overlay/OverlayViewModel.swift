@@ -27,7 +27,7 @@ final class OverlayViewModel: ObservableObject {
     /// with the spinner instead of claiming Listening at a waveform.
     @Published var micIsPreparing = false
     /// True from the moment the panel is ordered in until it is ordered out.
-    /// The view renders nothing while false, so no animation (the ring's
+    /// The pill mounts no icon while false, so no animation (the ring's
     /// endless spin) keeps redrawing inside the hidden panel between
     /// dictations — that redraw cost ~20% CPU idle, plus WindowServer.
     @Published var isOnScreen = false

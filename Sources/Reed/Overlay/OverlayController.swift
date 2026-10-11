@@ -160,8 +160,8 @@ final class OverlayController {
         )
     }
 
-    /// The panel is gone from screen: unmount the pill so nothing in it keeps
-    /// animating until the next dictation.
+    /// The panel is gone from screen: unmount the pill's icon so nothing in
+    /// it keeps animating until the next dictation.
     func didOrderOut() {
         viewModel.isOnScreen = false
     }
@@ -210,9 +210,8 @@ final class OverlayController {
     static let panelSize = NSSize(width: 364, height: 120)
 
     /// The pill centres itself in the fixed panel, so its content must never
-    /// size the panel: hidden, the view is empty and would collapse the panel
-    /// to 0×0, and the next show would centre that empty frame (the pill
-    /// appears right of centre, then jumps left as it resizes).
+    /// size the panel: a content-sized panel follows the pill's width as its
+    /// label changes, and every reposition then centres a stale frame.
     func makeContentView() -> NSHostingView<OverlayView> {
         let host = NSHostingView(rootView: OverlayView(viewModel: viewModel))
         host.sizingOptions = []

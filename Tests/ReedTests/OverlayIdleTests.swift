@@ -7,22 +7,24 @@ import XCTest
 /// its view still mounts keeps running: after a dictation the view model sat
 /// at idle + justFinished, so the ring's repeatForever spin animated inside
 /// the hidden panel until the next press (~20% CPU idle, plus WindowServer;
-/// 0.3.2, 2026-10-09). These pin that a hidden panel mounts nothing.
+/// 0.3.2, 2026-10-09). A hidden pill mounts no icon (the parts that animate),
+/// but stays mounted itself: emptying it made the next show lay it out from
+/// nothing, off-centre and then a jump (0.3.3, 2026-10-10).
 final class OverlayIdleTests: XCTestCase {
 
-    /// Every state the pill can be left in when the panel hides, including the
-    /// ones that mount the spinning ring.
-    private static let states: [(Coordinator.State, justFinished: Bool, micIsPreparing: Bool)] = [
-        (.idle, justFinished: true, micIsPreparing: false),
-        (.idle, justFinished: false, micIsPreparing: false),
-        (.warming, justFinished: false, micIsPreparing: true),
-        (.warming, justFinished: false, micIsPreparing: false),
-        (.recording, justFinished: false, micIsPreparing: false),
-        (.preparingModel, justFinished: false, micIsPreparing: false),
-        (.transcribing, justFinished: false, micIsPreparing: false),
-        (.injecting, justFinished: false, micIsPreparing: false),
-        (.error("Microphone unavailable"), justFinished: false, micIsPreparing: false),
-        (.notice("Nothing to write"), justFinished: false, micIsPreparing: false),
+    /// Every state the pill can be left in when the panel hides, and whether
+    /// it shows an icon (ring, waveform or warning) on screen.
+    private static let states: [(Coordinator.State, justFinished: Bool, micIsPreparing: Bool, icon: Bool)] = [
+        (.idle, justFinished: true, micIsPreparing: false, icon: true),
+        (.idle, justFinished: false, micIsPreparing: false, icon: false),
+        (.warming, justFinished: false, micIsPreparing: true, icon: true),
+        (.warming, justFinished: false, micIsPreparing: false, icon: true),
+        (.recording, justFinished: false, micIsPreparing: false, icon: true),
+        (.preparingModel, justFinished: false, micIsPreparing: false, icon: true),
+        (.transcribing, justFinished: false, micIsPreparing: false, icon: true),
+        (.injecting, justFinished: false, micIsPreparing: false, icon: true),
+        (.error("Microphone unavailable"), justFinished: false, micIsPreparing: false, icon: true),
+        (.notice("Nothing to write"), justFinished: false, micIsPreparing: false, icon: false),
     ]
 
     @MainActor
@@ -33,35 +35,44 @@ final class OverlayIdleTests: XCTestCase {
     }
 
     @MainActor
-    func testHiddenPanelMountsNothing() {
-        for (state, justFinished, micIsPreparing) in Self.states {
+    func testHiddenPillKeepsItsBodyButDropsItsIcon() {
+        for (state, justFinished, micIsPreparing, icon) in Self.states {
             let viewModel = OverlayViewModel()
             viewModel.state = state
             viewModel.justFinished = justFinished
             viewModel.micIsPreparing = micIsPreparing
 
             viewModel.isOnScreen = true
-            XCTAssertGreaterThan(renderedSize(viewModel).width, 0, "on screen, \(state) must render the pill")
-
+            let shown = renderedSize(viewModel)
             viewModel.isOnScreen = false
-            XCTAssertEqual(renderedSize(viewModel), .zero, "hidden, \(state) must mount nothing")
+            let hidden = renderedSize(viewModel)
+
+            XCTAssertGreaterThan(hidden.width, 0, "hidden, \(state) must keep the pill mounted")
+            XCTAssertGreaterThan(hidden.height, 0, "hidden, \(state) must keep the pill mounted")
+            if icon {
+                XCTAssertLessThan(hidden.width, shown.width, "hidden, \(state) must not mount its icon")
+            } else {
+                XCTAssertEqual(hidden.width, shown.width, accuracy: 0.5, "\(state) has no icon to drop")
+            }
         }
     }
 
     @MainActor
-    func testOrderOutUnmountsThePill() {
+    func testOrderOutDropsTheRing() {
         // The production sequence: a dictation lands (idle + the Done beat,
         // ring mounted), then the hide completes.
         let controller = OverlayController()
         controller.viewModel.state = .idle
         controller.viewModel.justFinished = true
         controller.viewModel.isOnScreen = true
-        XCTAssertGreaterThan(renderedSize(controller.viewModel).width, 0)
+        let shown = renderedSize(controller.viewModel)
 
         controller.didOrderOut()
 
         XCTAssertFalse(controller.viewModel.isOnScreen)
-        XCTAssertEqual(renderedSize(controller.viewModel), .zero)
+        let hidden = renderedSize(controller.viewModel)
+        XCTAssertGreaterThan(hidden.width, 0)
+        XCTAssertLessThan(hidden.width, shown.width)
     }
 }
 

@@ -45,3 +45,26 @@ final class HUDGlassCornerTests: XCTestCase {
         try assertRoundedMask(views.first, "toast")
     }
 }
+
+/// The toast panel is sized to its content's fitting size, so the card's
+/// shadow used to be cut off on every side: a grey rectangle around it
+/// (2026-10-10). At its fitting size the shadow must fade before every edge.
+@MainActor
+final class HUDCardShadowRoomTests: XCTestCase {
+    func testToastShadowFadesBeforeThePanelEdges() throws {
+        _ = NSApplication.shared
+        let host = NSHostingView(rootView: Text("Microphone unavailable").hudCard())
+        host.frame = NSRect(origin: .zero, size: host.fittingSize)
+        host.layoutSubtreeIfNeeded()
+        let rep = try XCTUnwrap(host.bitmapImageRepForCachingDisplay(in: host.bounds))
+        host.cacheDisplay(in: host.bounds, to: rep)
+        var edge: CGFloat = 0
+        for x in 0..<rep.pixelsWide {
+            edge = max(edge, rep.colorAt(x: x, y: 0)?.alphaComponent ?? 0, rep.colorAt(x: x, y: rep.pixelsHigh - 1)?.alphaComponent ?? 0)
+        }
+        for y in 0..<rep.pixelsHigh {
+            edge = max(edge, rep.colorAt(x: 0, y: y)?.alphaComponent ?? 0, rep.colorAt(x: rep.pixelsWide - 1, y: y)?.alphaComponent ?? 0)
+        }
+        XCTAssertLessThan(edge, 0.02, "the toast's shadow is cut off at the panel edge")
+    }
+}

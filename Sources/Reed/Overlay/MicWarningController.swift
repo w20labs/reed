@@ -164,7 +164,8 @@ final class MicWarningController {
         let frame = screen.frame
         let size = panel.frame.size
         let x = frame.midX - size.width / 2
-        let y = frame.minY + frame.height * 0.22
+        // The card itself keeps its spot; the shadow room hangs below it.
+        let y = frame.minY + frame.height * 0.22 - HUDCard.shadowRoom.bottom
         panel.setFrameOrigin(NSPoint(x: x, y: y))
     }
 }

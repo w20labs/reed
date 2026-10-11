@@ -14,7 +14,7 @@ struct HUDCard: ViewModifier {
             .frame(width: 320, alignment: .leading)
             .background {
                 ZStack {
-                    VisualEffectView(material: .hudWindow)
+                    VisualEffectView(material: .hudWindow, cornerRadius: 14)
                     Color(.sRGB, red: 0.133, green: 0.141, blue: 0.165, opacity: 1).opacity(0.5)
                 }
                 .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
@@ -24,7 +24,15 @@ struct HUDCard: ViewModifier {
                     .strokeBorder(Color.white.opacity(0.12), lineWidth: 0.5)
             }
             .shadow(color: .black.opacity(0.4), radius: 22, y: 20)
+            // The toast panel is sized to this view; without room around the
+            // card it cut the shadow off on every side, a grey rectangle.
+            .padding(Self.shadowRoom)
     }
+
+    /// Room for the shadow (radius 22, 20 pt down) to fade out inside the
+    /// panel. Top and bottom match, so it holds whichever way a renderer
+    /// applies the offset (offscreen renders draw it upward).
+    static let shadowRoom = EdgeInsets(top: 80, leading: 48, bottom: 80, trailing: 48)
 }
 
 extension View {

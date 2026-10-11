@@ -13,12 +13,26 @@ struct OverlayView: View {
             iconView
                 .frame(height: 24)
 
+            // Near the five-minute limit the pill keeps listening and adds
+            // the amber glyph: actionable, not a failure.
+            if isListening && viewModel.recordingLimitNear {
+                WarnGlyph(hard: false)
+            }
+
             if !label.isEmpty {
                 Text(label)
                     .font(ReedFont.ui(13.5, 500))
                     // Notices are deliberately quiet: secondary text, no glyph —
                     // "Nothing to write" must not read like a result or an error.
                     .foregroundStyle(isNotice ? secondary : content)
+                    .lineLimit(1)
+                    .fixedSize()
+            }
+
+            if isListening, !viewModel.recordingLimitNear, let hint = viewModel.handsFreeHint {
+                Text(hint)
+                    .font(ReedFont.ui(13.5, 500))
+                    .foregroundStyle(secondary)
                     .lineLimit(1)
                     .fixedSize()
             }
@@ -148,7 +162,9 @@ struct OverlayView: View {
         // a label just flickers; the spinner says enough. "Pasting…" is
         // dropped too: injection is one frame; the check says everything.
         case .warming where viewModel.micIsPreparing: return "Preparing mic…"
-        case .warming, .recording: return "Listening"
+        case .warming, .recording:
+            if viewModel.recordingLimitNear { return "30 s left" }
+            return viewModel.handsFreeHint == nil ? "Listening" : "Hands-free"
         // The one processing state that DOES carry a word — a cold model load
         // can run tens of seconds and must read as preparation, not a hang.
         case .preparingModel: return "Preparing speech model…"

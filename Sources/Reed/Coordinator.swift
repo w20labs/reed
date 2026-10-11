@@ -22,7 +22,14 @@ final class Coordinator: ObservableObject {
 
     static let shared = Coordinator()
 
-    @Published var state: State = .idle
+    @Published var state: State = .idle {
+        didSet { endHandsFreeIfCaptureEnded() }
+    }
+    /// A hands-free session is locked (P17): the HUD says "Hands-free" and the
+    /// shortcut finishes instead of starting. Cleared whenever capture ends.
+    @Published var handsFree = false
+    /// The press is within 30 s of the five-minute limit (amber "30 s left").
+    @Published var recordingLimitNear = false
     @Published var lastTranscript: String = ""
     /// Live mic level (0…1) for the HUD meter; 0 when not recording.
     @Published var inputLevel: Float = 0
@@ -62,6 +69,16 @@ final class Coordinator: ObservableObject {
     /// already ended — the prewarm race (2026-08-24): a quick tap during the
     /// cold-start await left the mic armed with the coordinator idle.
     var pressGeneration = 0
+    /// The press's "30 s left" / auto-finish timer (Coordinator+HandsFree).
+    var recordingLimitTask: Task<Void, Never>?
+    /// When the warning shows and the press finishes, in seconds from the
+    /// press. A seam: tests shrink it; the app keeps 4:30 / 5:00.
+    var recordingLimitSchedule = (
+        warn: Coordinator.recordingLimit - Coordinator.recordingLimitWarningLead,
+        finish: Coordinator.recordingLimit)
+    /// The recorded combo's tap sequence and its press in progress.
+    var shortcutTaps = DoubleTapDetector()
+    var shortcutPress: ShortcutPress?
     /// Identity for the 4 s error auto-clear (audit 2026-08-25): a stale
     /// clear task from error A must not truncate a newer error B's pill.
     /// Bumped on every scheduled clear AND on every fresh press (start()),
@@ -166,15 +183,14 @@ final class Coordinator: ObservableObject {
         recorder.onLevel = { [weak self] level in self?.inputLevel = level }
         KeyboardShortcuts.onKeyDown(for: .toggleDictation) { [weak self] in
             log.info("hotkey keyDown")
-            guard let self else { return }
-            Task { @MainActor in await self.start() }
+            self?.shortcutPressed()
         }
         KeyboardShortcuts.onKeyUp(for: .toggleDictation) { [weak self] in
             log.info("hotkey keyUp")
-            guard let self else { return }
-            Task { @MainActor in await self.stopAndProcess() }
+            self?.shortcutReleased()
         }
         configureHoldMonitor()
+        configureHandsFree()
 
         // Fresh installs → onboarding; existing users → What's New once after
         // a version bump.

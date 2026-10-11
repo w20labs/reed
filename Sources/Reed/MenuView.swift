@@ -262,7 +262,10 @@ struct MenuView: View {
         func mono(_ string: String) -> Text { Text(string).font(ReedFont.mono(11, 500)) }
         switch coordinator.state {
         case .idle, .notice, .error: return plain("Hold ") + mono(shortcut) + plain(" to dictate")
-        case .warming, .recording: return plain("Release ") + mono(shortcut) + plain(" to transcribe")
+        case .warming, .recording:
+            // Hands-free (P17): the shortcut finishes on a tap, not a release.
+            if coordinator.handsFree { return plain("Tap ") + mono(shortcut) + plain(" to finish, Esc to discard") }
+            return plain("Release ") + mono(shortcut) + plain(" to transcribe")
         case .preparingModel: return plain("One-time model preparation - next dictations are instant")
         case .transcribing: return plain("Transcribing on your Mac…")
         case .injecting: return plain("Inserting at cursor")

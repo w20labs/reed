@@ -5,7 +5,9 @@ import Foundation
 /// hotkey press — guards, per-press reset, recorder callbacks, and the
 /// generation-checked awaited engine start.
 extension Coordinator {
-    func start() async {
+    /// `handsFree`: the press is a double-tap released before capture began
+    /// (P17) — it starts already locked.
+    func start(handsFree lockOnStart: Bool = false) async {
         // Busy FIRST (review 2026-09-06): a second hotkey while a press is
         // live must touch nothing — the refusal below used to be able to
         // flip a recording press to .error. Errors don't block — they get
@@ -140,7 +142,11 @@ extension Coordinator {
         // deaf mic. A warm resume stays silent, so nothing flickers.
         micIsPreparing = currentMicIsBluetooth || !recorder.isWarm
         state = .warming
+        if lockOnStart { handsFree = true }
         startWarmingWatchdog()
+        // Every press finishes at the five-minute limit (P17); a hold
+        // rarely gets there, hands-free easily does.
+        armRecordingLimit(generation: generation)
         await startRecorder(generation: generation)
     }
 

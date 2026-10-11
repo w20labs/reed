@@ -36,6 +36,16 @@ final class OverlayController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] preparing in self?.viewModel.micIsPreparing = preparing }
             .store(in: &cancellables)
+        coordinator.$handsFree
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] locked in
+                self?.viewModel.handsFreeHint = locked ? "tap \(PushToTalkTrigger.finishKeysLabel) to finish" : nil
+            }
+            .store(in: &cancellables)
+        coordinator.$recordingLimitNear
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] near in self?.viewModel.recordingLimitNear = near }
+            .store(in: &cancellables)
         coordinator.$activeError
             .receive(on: DispatchQueue.main)
             .sink { [weak self] error in self?.viewModel.errorIsHard = error?.severity == .hard }
@@ -204,10 +214,12 @@ final class OverlayController {
         self.panel = panel
     }
 
-    /// The pill (max 300 pt wide) centred in a panel with room on every side
-    /// for its shadow (radius 12, 8 pt down). A panel that hugs the pill cuts
-    /// the shadow off in a straight line, which reads as a grey rectangle.
-    static let panelSize = NSSize(width: 364, height: 120)
+    /// The pill centred in a panel with room on every side for its shadow
+    /// (radius 12, 8 pt down). A panel that hugs the pill cuts the shadow off
+    /// in a straight line, which reads as a grey rectangle. The widest pill is
+    /// hands-free with its finish hint and timer (P17) — ~340 pt on a recorded
+    /// combo, past the 300 the old 364 was cut for.
+    static let panelSize = NSSize(width: 440, height: 120)
 
     /// The pill centres itself in the fixed panel, so its content must never
     /// size the panel: a content-sized panel follows the pill's width as its

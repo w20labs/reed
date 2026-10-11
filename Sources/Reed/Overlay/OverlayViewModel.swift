@@ -31,4 +31,9 @@ final class OverlayViewModel: ObservableObject {
     /// endless spin) keeps redrawing inside the hidden panel between
     /// dictations — that redraw cost ~20% CPU idle, plus WindowServer.
     @Published var isOnScreen = false
+    /// Hands-free (P17): the pill's finish hint ("tap ⌃⌥ to finish"), nil
+    /// for an ordinary hold.
+    @Published var handsFreeHint: String?
+    /// Within 30 s of the five-minute limit: amber "30 s left".
+    @Published var recordingLimitNear = false
 }

@@ -503,6 +503,88 @@ final class HandsFreeTests: XCTestCase {
         XCTAssertTrue(coordinator.isHandsFreeLive, "a chord during the finish press finishes nothing")
     }
 
+    // MARK: - review 2026-10-11, third round: modifier chords on the combo
+
+    /// Custom mode with ⌃⌥R recorded, the way a keyboard delivers a press:
+    /// ⌃⌥ already down (flagsChanged) when R fires the combo.
+    private func comboSetUp(_ body: (Coordinator) async throws -> Void) async rethrows {
+        let saved = KeyboardShortcuts.getShortcut(for: .toggleDictation)
+        defer { KeyboardShortcuts.setShortcut(saved, for: .toggleDictation) }
+        KeyboardShortcuts.setShortcut(.init(.r, modifiers: [.control, .option]), for: .toggleDictation)
+        let coordinator = Coordinator()
+        coordinator.holdMonitor.setTrigger(nil)
+        try await body(coordinator)
+    }
+
+    private func comboPress(_ coordinator: Coordinator) {
+        coordinator.holdMonitor.flagsChanged([.control])
+        coordinator.holdMonitor.flagsChanged([.control, .option])
+        coordinator.shortcutPressed()
+    }
+
+    private func extraModifierJoinsAndDrops(_ coordinator: Coordinator) {
+        coordinator.holdMonitor.flagsChanged([.control, .option, .command])
+        coordinator.holdMonitor.flagsChanged([.control, .option])
+    }
+
+    func testAnExtraModifierDuringTheFirstComboTapOpensNoWindow() async {
+        await comboSetUp { coordinator in
+            coordinator.state = .transcribing
+            comboPress(coordinator)
+            extraModifierJoinsAndDrops(coordinator)
+            coordinator.shortcutReleased()
+            comboPress(coordinator)
+            XCTAssertEqual(coordinator.shortcutPress?.isSecondTap, false)
+            coordinator.shortcutReleased()
+        }
+    }
+
+    func testAnExtraModifierDuringTheSecondComboTapPreventsTheLock() async throws {
+        try await comboSetUp { coordinator in
+            coordinator.state = .transcribing
+            comboPress(coordinator); coordinator.shortcutReleased()
+            await drainMainActor()
+            comboPress(coordinator)
+            XCTAssertEqual(coordinator.shortcutPress?.isSecondTap, true)
+            coordinator.state = .recording
+            coordinator.realSignalConfirmedForCurrentRecording = true
+            coordinator.holdStartedAt = Date()
+            extraModifierJoinsAndDrops(coordinator)
+            coordinator.shortcutReleased()
+            try await eventually { coordinator.state != .recording }
+            XCTAssertFalse(coordinator.handsFree)
+            XCTAssertEqual(coordinator.state, .idle, "the chorded tap's take is discarded, the mic released")
+        }
+    }
+
+    func testAnExtraModifierDuringAComboFinishPressKeepsTheSession() async {
+        await comboSetUp { coordinator in
+            coordinator.state = .recording
+            coordinator.lockHandsFree()
+            comboPress(coordinator)
+            extraModifierJoinsAndDrops(coordinator)
+            coordinator.shortcutReleased()
+            await drainMainActor()
+            XCTAssertTrue(coordinator.isHandsFreeLive)
+        }
+    }
+
+    /// The other side of the rule: lifting the combo's own modifiers before
+    /// its key is an ordinary release. It must still lock.
+    func testLiftingTheCombosOwnModifierFirstStillLocks() async throws {
+        try await comboSetUp { coordinator in
+            coordinator.state = .transcribing
+            comboPress(coordinator); coordinator.shortcutReleased()
+            await drainMainActor()
+            comboPress(coordinator)
+            coordinator.state = .recording
+            coordinator.holdMonitor.flagsChanged([.control])  // ⌥ up before R
+            coordinator.shortcutReleased()
+            try await eventually { coordinator.handsFree }
+            XCTAssertTrue(coordinator.isHandsFreeLive)
+        }
+    }
+
     /// The hint names the live shortcut: a retarget mid-session must move it.
     func testTheFinishHintFollowsAShortcutChange() async throws {
         let saved = UserDefaults.standard.object(forKey: PushToTalkTrigger.defaultsKey)

@@ -40,6 +40,11 @@ final class ModifierHoldMonitor {
     /// the recorded combo keeps its tap sequence in the coordinator and must
     /// break it on typing exactly as this monitor breaks its own.
     var onKeyDown: ((_ keyCode: UInt16, _ modifiers: NSEvent.ModifierFlags) -> Void)?
+    /// Every modifier change, forwarded even with no hold armed (custom
+    /// mode): an extra modifier joining a combo press is a chord there too.
+    var onFlagsChanged: ((_ active: NSEvent.ModifierFlags) -> Void)?
+    /// The modifiers held as of the last change, trigger or not.
+    private(set) var currentModifiers: NSEvent.ModifierFlags = []
     /// Whether a hands-free session is live. The coordinator is the
     /// authority: a session that ended any other way (the five-minute limit,
     /// a lost mic, an error) reads false here at the next event, so no stale
@@ -144,6 +149,8 @@ final class ModifierHoldMonitor {
     }
 
     func flagsChanged(_ active: NSEvent.ModifierFlags) {
+        currentModifiers = active
+        onFlagsChanged?(active)
         guard let trigger else { return }  // custom-shortcut mode → no hold
         if active == trigger {
             guard !blocked, phase == .idle else { return }

@@ -51,6 +51,9 @@ extension Coordinator {
         holdMonitor.onKeyDown = { [weak self] keyCode, modifiers in
             self?.comboKeyDown(keyCode: keyCode, modifiers: modifiers)
         }
+        holdMonitor.onFlagsChanged = { [weak self] active in
+            self?.comboFlagsChanged(active)
+        }
         NotificationCenter.default.addObserver(
             forName: PushToTalkTrigger.didChange, object: nil, queue: .main
         ) { [weak self] _ in
@@ -117,11 +120,13 @@ extension Coordinator {
     func shortcutPressed() {
         let time = ProcessInfo.processInfo.systemUptime
         if isHandsFreeLive {
-            shortcutPress = ShortcutPress(at: time, isSecondTap: false, finishes: true)
+            shortcutPress = ShortcutPress(at: time, isSecondTap: false, finishes: true,
+                                          modifiers: comboModifiersAtPress())
             return
         }
         let second = shortcutTaps.pressIsSecondTap(at: time)
-        shortcutPress = ShortcutPress(at: time, isSecondTap: second, finishes: false)
+        shortcutPress = ShortcutPress(at: time, isSecondTap: second, finishes: false,
+                                      modifiers: comboModifiersAtPress())
         Task { @MainActor [weak self] in await self?.start() }
     }
 
@@ -168,7 +173,23 @@ extension Coordinator {
         interruptComboGesture()
     }
 
-    /// Typing or a shortcut change breaks the gesture in BOTH places it
+    /// A modifier outside the combo's own set joining a held combo press is
+    /// a chord (review 2026-10-11, third round), as an extra modifier is on
+    /// the hold. Lifting the combo's own modifiers is a release, not a chord.
+    func comboFlagsChanged(_ active: NSEvent.ModifierFlags) {
+        guard let press = shortcutPress else { return }
+        if !active.isSubset(of: press.modifiers) { interruptComboGesture() }
+    }
+
+    /// The press's own modifier set: what was held when it began, plus the
+    /// recorded combo's — so neither a missed event nor a missing lookup can
+    /// make the combo's own modifiers read as a chord, or disarm the check.
+    private func comboModifiersAtPress() -> NSEvent.ModifierFlags {
+        let recorded = KeyboardShortcuts.getShortcut(for: .toggleDictation)?.modifiers ?? []
+        return holdMonitor.currentModifiers.union(recorded.intersection(ModifierHoldMonitor.relevant))
+    }
+
+    /// Typing, a shortcut change or an extra modifier breaks the gesture in BOTH places it
     /// lives: the tap history and the press still held (review 2026-10-11,
     /// second round) — clearing only the history let the held press's
     /// release reopen the window or complete a lock.
@@ -181,6 +202,8 @@ extension Coordinator {
         let at: TimeInterval
         let isSecondTap: Bool
         let finishes: Bool
+        /// Modifiers that belong to this press; any other joining is a chord.
+        var modifiers: NSEvent.ModifierFlags = []
         var interrupted = false
     }
 }

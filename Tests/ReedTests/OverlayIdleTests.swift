@@ -74,7 +74,7 @@ final class OverlayPanelSizeTests: XCTestCase {
     func testPanelKeepsItsSizeAcrossHideAndShow() {
         _ = NSApplication.shared
         let controller = OverlayController()
-        let size = NSSize(width: 316, height: 84)
+        let size = OverlayController.panelSize
         let panel = NSPanel(
             contentRect: NSRect(origin: .zero, size: size),
             styleMask: [.borderless, .nonactivatingPanel],
@@ -102,4 +102,41 @@ final class OverlayPanelSizeTests: XCTestCase {
         settle()
         XCTAssertEqual(panel.frame.size, size, "showing again must not resize the panel")
     }
+}
+
+/// A panel that hugs the pill cuts its drop shadow off in a straight line,
+/// which reads as a grey rectangle around the pill (2026-10-10). Rendered at
+/// the panel's size, the pill's shadow must fade out before every edge.
+@MainActor
+final class OverlayShadowRoomTests: XCTestCase {
+    func testShadowFadesBeforeThePanelEdges() throws {
+        _ = NSApplication.shared
+        let states: [Coordinator.State] = [.recording, .preparingModel, .error("Mic wasn't ready")]
+        for state in states {
+            let controller = OverlayController()
+            controller.viewModel.state = state
+            controller.viewModel.isOnScreen = true
+            let host = controller.makeContentView()
+            host.frame = NSRect(origin: .zero, size: OverlayController.panelSize)
+            host.layoutSubtreeIfNeeded()
+            let edge = try maxEdgeAlpha(host)
+            XCTAssertLessThan(edge, 0.02, "\(state): the shadow is cut off at the panel edge")
+        }
+    }
+}
+
+/// The most opaque pixel on the outermost ring of `view`'s rendering.
+@MainActor
+func maxEdgeAlpha(_ view: NSView) throws -> CGFloat {
+    let rep = try XCTUnwrap(view.bitmapImageRepForCachingDisplay(in: view.bounds))
+    view.cacheDisplay(in: view.bounds, to: rep)
+    let width = rep.pixelsWide, height = rep.pixelsHigh
+    var edge: CGFloat = 0
+    for x in 0..<width {
+        edge = max(edge, rep.colorAt(x: x, y: 0)?.alphaComponent ?? 0, rep.colorAt(x: x, y: height - 1)?.alphaComponent ?? 0)
+    }
+    for y in 0..<height {
+        edge = max(edge, rep.colorAt(x: 0, y: y)?.alphaComponent ?? 0, rep.colorAt(x: width - 1, y: y)?.alphaComponent ?? 0)
+    }
+    return edge
 }

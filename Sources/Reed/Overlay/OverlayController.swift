@@ -181,12 +181,8 @@ final class OverlayController {
     }
 
     private func buildPanel() {
-        // Wide enough for the pill plus the elapsed timer.
-        // Panel = pill maxWidth (300) + 16 slack, mirroring the original ratio so
-        // the fixed-width pill stays centred under the screen midline.
-        let size = NSSize(width: 316, height: 84)
         let panel = NSPanel(
-            contentRect: NSRect(origin: .zero, size: size),
+            contentRect: NSRect(origin: .zero, size: Self.panelSize),
             styleMask: [.borderless, .nonactivatingPanel],
             backing: .buffered,
             defer: false
@@ -207,6 +203,11 @@ final class OverlayController {
         panel.contentView = makeContentView()
         self.panel = panel
     }
+
+    /// The pill (max 300 pt wide) centred in a panel with room on every side
+    /// for its shadow (radius 12, 8 pt down). A panel that hugs the pill cuts
+    /// the shadow off in a straight line, which reads as a grey rectangle.
+    static let panelSize = NSSize(width: 364, height: 120)
 
     /// The pill centres itself in the fixed panel, so its content must never
     /// size the panel: hidden, the view is empty and would collapse the panel
@@ -230,7 +231,9 @@ final class OverlayController {
         let frame = screen.frame
         let size = panel.frame.size
         let x = frame.midX - size.width / 2
-        let y = frame.maxY - 80 - size.height
+        // The pill's centre sits where it always has, ~80 pt + half the old
+        // 84 pt panel below the top; the shadow margin grows around it.
+        let y = frame.maxY - 80 - 42 - size.height / 2
         panel.setFrameOrigin(NSPoint(x: x, y: y))
     }
 }

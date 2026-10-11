@@ -234,6 +234,12 @@ final class HandsFreeTests: XCTestCase {
     /// Waits for a condition on the main actor, bounded: the main queue can
     /// be busy for a while after Coordinator() is built, so a fixed sleep
     /// would race it.
+    /// Runs after everything already queued on the main actor (FIFO), so
+    /// the gesture handlers' Tasks have made their decisions.
+    private func drainMainActor() async {
+        await Task { @MainActor in }.value
+    }
+
     private func eventually(_ condition: () -> Bool) async throws {
         let deadline = Date().addingTimeInterval(5)
         while !condition() && Date() < deadline {
@@ -414,6 +420,87 @@ final class HandsFreeTests: XCTestCase {
         coordinator.shortcutPressed()
         XCTAssertEqual(coordinator.shortcutPress?.isSecondTap, false)
         coordinator.shortcutReleased()
+    }
+
+    // MARK: - review 2026-10-11, second round: the press in progress
+
+    func testTypingDuringTheFirstComboTapOpensNoWindow() {
+        let coordinator = Coordinator()
+        coordinator.state = .transcribing
+        coordinator.shortcutPressed()
+        coordinator.holdMonitor.keyDown(keyCode: 0)
+        coordinator.shortcutReleased()
+        coordinator.shortcutPressed()
+        XCTAssertEqual(coordinator.shortcutPress?.isSecondTap, false)
+        coordinator.shortcutReleased()
+    }
+
+    /// First tap refused (busy), second tap held with its capture standing
+    /// in as live — no real microphone.
+    private func beginSecondComboTap(_ coordinator: Coordinator) async throws {
+        coordinator.state = .transcribing
+        coordinator.shortcutPressed()
+        coordinator.shortcutReleased()
+        await drainMainActor()  // the refused tap's queued handlers
+        coordinator.shortcutPressed()
+        XCTAssertEqual(coordinator.shortcutPress?.isSecondTap, true)
+        coordinator.state = .recording
+        coordinator.realSignalConfirmedForCurrentRecording = true
+        coordinator.holdStartedAt = Date()
+    }
+
+    /// The release of an interrupted second tap must not lock — and must
+    /// still end its capture, so the mic is not left live.
+    func testTypingDuringTheSecondComboTapPreventsTheLockAndEndsTheCapture() async throws {
+        let coordinator = Coordinator()
+        try await beginSecondComboTap(coordinator)
+        coordinator.holdMonitor.keyDown(keyCode: 0)
+        coordinator.shortcutReleased()
+        try await eventually { coordinator.state != .recording }
+        XCTAssertFalse(coordinator.handsFree)
+        XCTAssertEqual(coordinator.state, .idle, "the interrupted tap's take is discarded, the mic released")
+    }
+
+    func testAShortcutChangeDuringTheSecondComboTapPreventsTheLock() async throws {
+        let coordinator = Coordinator()
+        try await beginSecondComboTap(coordinator)
+        NotificationCenter.default.post(name: PushToTalkTrigger.didChange, object: nil)
+        coordinator.shortcutReleased()
+        try await eventually { coordinator.state != .recording }
+        XCTAssertFalse(coordinator.handsFree)
+        XCTAssertEqual(coordinator.state, .idle)
+    }
+
+    /// Before P17, typing during a combo HOLD changed nothing: release
+    /// transcribed. An interruption must not turn a hold into a discard —
+    /// told apart by the release path's pass through `.transcribing`.
+    func testTypingDuringAComboHoldStillTranscribes() async throws {
+        let coordinator = Coordinator()
+        coordinator.state = .recording
+        coordinator.realSignalConfirmedForCurrentRecording = true
+        coordinator.holdStartedAt = Date()
+        var seen: [Coordinator.State] = []
+        let watch = coordinator.$state.sink { seen.append($0) }
+        defer { watch.cancel() }
+        coordinator.shortcutPress = Coordinator.ShortcutPress(
+            at: ProcessInfo.processInfo.systemUptime - 2, isSecondTap: false, finishes: false)
+        coordinator.holdMonitor.keyDown(keyCode: 0)
+        coordinator.shortcutReleased()
+        try await eventually { coordinator.state == .idle }
+        XCTAssertTrue(seen.contains(.transcribing), "a 2 s hold is transcribed, interrupted or not: \(seen)")
+    }
+
+    /// While locked, a key during the combo press makes it a chord: the
+    /// session keeps listening, as on the hold.
+    func testAnInterruptedFinishPressKeepsTheSession() async throws {
+        let coordinator = Coordinator()
+        coordinator.state = .recording
+        coordinator.lockHandsFree()
+        coordinator.shortcutPressed()
+        coordinator.holdMonitor.keyDown(keyCode: 8)
+        coordinator.shortcutReleased()
+        await drainMainActor()
+        XCTAssertTrue(coordinator.isHandsFreeLive, "a chord during the finish press finishes nothing")
     }
 
     /// The hint names the live shortcut: a retarget mid-session must move it.

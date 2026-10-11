@@ -54,7 +54,7 @@ extension Coordinator {
         NotificationCenter.default.addObserver(
             forName: PushToTalkTrigger.didChange, object: nil, queue: .main
         ) { [weak self] _ in
-            MainActor.assumeIsolated { self?.shortcutTaps.reset() }
+            MainActor.assumeIsolated { self?.interruptComboGesture() }
         }
     }
 
@@ -129,15 +129,26 @@ extension Coordinator {
         guard let press = shortcutPress else { return }
         shortcutPress = nil
         if press.finishes {
+            // An interrupted finish press was a chord, as on the hold: the
+            // session keeps listening.
+            guard !press.interrupted else { return }
             Task { @MainActor [weak self] in await self?.stopAndProcess() }
             return
         }
         let time = ProcessInfo.processInfo.systemUptime
         let tap = DoubleTapDetector.isTap(pressedAt: press.at, releasedAt: time)
-        shortcutTaps.released(pressedAt: press.at, releasedAt: time, wasSecondTap: press.isSecondTap)
+        // An interrupted press is no part of a gesture: it neither opens a
+        // window nor locks. Its release still ends its capture — a tap is
+        // discarded, a hold transcribes — or the mic would stay live.
+        if press.interrupted {
+            shortcutTaps.reset()
+        } else {
+            shortcutTaps.released(pressedAt: press.at, releasedAt: time, wasSecondTap: press.isSecondTap)
+        }
+        let lock = tap && press.isSecondTap && !press.interrupted
         Task { @MainActor [weak self] in
             guard let self else { return }
-            if tap && press.isSecondTap {
+            if lock {
                 self.lockHandsFree()
             } else if tap {
                 self.cancelDictation()
@@ -147,19 +158,29 @@ extension Coordinator {
         }
     }
 
-    /// A key that is not the combo itself breaks the combo's tap sequence.
+    /// A key that is not the combo itself breaks the combo's gesture.
     func comboKeyDown(keyCode: UInt16, modifiers: NSEvent.ModifierFlags) {
         if let combo = KeyboardShortcuts.getShortcut(for: .toggleDictation),
            Int(keyCode) == combo.carbonKeyCode,
            modifiers == combo.modifiers.intersection(ModifierHoldMonitor.relevant) {
             return
         }
+        interruptComboGesture()
+    }
+
+    /// Typing or a shortcut change breaks the gesture in BOTH places it
+    /// lives: the tap history and the press still held (review 2026-10-11,
+    /// second round) — clearing only the history let the held press's
+    /// release reopen the window or complete a lock.
+    func interruptComboGesture() {
         shortcutTaps.reset()
+        shortcutPress?.interrupted = true
     }
 
     struct ShortcutPress {
         let at: TimeInterval
         let isSecondTap: Bool
         let finishes: Bool
+        var interrupted = false
     }
 }

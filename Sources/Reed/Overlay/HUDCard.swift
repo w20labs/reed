@@ -14,7 +14,7 @@ struct HUDCard: ViewModifier {
             .frame(width: 320, alignment: .leading)
             .background {
                 ZStack {
-                    VisualEffectView(material: .hudWindow)
+                    VisualEffectView(material: .hudWindow, cornerRadius: 14)
                     Color(.sRGB, red: 0.133, green: 0.141, blue: 0.165, opacity: 1).opacity(0.5)
                 }
                 .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))

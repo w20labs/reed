@@ -49,7 +49,7 @@ struct OverlayView: View {
             // `.hudWindow` alone reads medium-grey; a charcoal tint over it
             // darkens the glass to the Figma pill (rgba(34,36,42,~0.6)).
             ZStack {
-                VisualEffectView(material: .hudWindow)
+                VisualEffectView(material: .hudWindow, cornerRadius: 16)
                 Color(.sRGB, red: 0.133, green: 0.141, blue: 0.165, opacity: 1).opacity(0.62)
             }
             .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
@@ -171,11 +171,16 @@ struct OverlayView: View {
 /// Not private: MicWarningController's toast shares this same material.
 struct VisualEffectView: NSViewRepresentable {
     let material: NSVisualEffectView.Material
+    /// The blur is composited by the window server from the view's full
+    /// rectangle; a SwiftUI `clipShape` doesn't reach it, so without its own
+    /// mask the square corners showed as a shade around the rounded pill.
+    let cornerRadius: CGFloat
 
     func makeNSView(context: Context) -> NSVisualEffectView {
         let view = NSVisualEffectView()
         view.material = material
         view.blendingMode = .behindWindow
+        view.maskImage = Self.roundedMask(cornerRadius)
         view.state = .active
         // Force dark: `.hudWindow` otherwise follows the system appearance and
         // renders light in Light mode, washing out the white content. The HUD is
@@ -186,6 +191,20 @@ struct VisualEffectView: NSViewRepresentable {
 
     func updateNSView(_ view: NSVisualEffectView, context: Context) {
         view.material = material
+    }
+
+    /// A stretchable rounded-rect mask: only the corners are fixed, so it
+    /// fits whatever size the view takes.
+    static func roundedMask(_ radius: CGFloat) -> NSImage {
+        let edge = radius * 2 + 1
+        let image = NSImage(size: NSSize(width: edge, height: edge), flipped: false) { rect in
+            NSColor.black.setFill()
+            NSBezierPath(roundedRect: rect, xRadius: radius, yRadius: radius).fill()
+            return true
+        }
+        image.capInsets = NSEdgeInsets(top: radius, left: radius, bottom: radius, right: radius)
+        image.resizingMode = .stretch
+        return image
     }
 }
 

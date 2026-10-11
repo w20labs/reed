@@ -1079,6 +1079,38 @@
     </div></div>
   </div>
 
+  <h3 style="margin-top:26px;">HUD &#183; hands-free <span style="font-weight:400;color:var(--slate)">&#8212; double-tap the shortcut to lock the mic, tap to finish, Esc to discard (DECIDED 2026-10-11, P17)</span></h3>
+  <p class="lede">Holding a key through a two-minute message is tiring and rules out long dictation. Hands-free keeps hold-to-talk exactly as it is and adds one gesture on the same shortcut: <b>double-tap to lock</b>. No new setting, no new permission, nothing leaves the Mac. It also closes a gap it would otherwise widen: the recorder used to drop audio after five minutes without a word.</p>
+  <div class="stage" style="flex-direction:column;">
+    <div class="half dark"><div class="row">
+      <div class="cell"><div class="pill"><div class="wave"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><span>Listening</span><span class="timer">0:02</span></div><div class="cap">hold &#183; unchanged</div></div>
+      <div class="cell"><div class="pill"><div class="wave"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><span>Hands-free</span><span class="muted">tap &#8963;&#8997; to finish</span><span class="timer">1:12</span></div><div class="cap">after a double-tap &#183; keys are free</div></div>
+      <div class="cell"><div class="pill"><div class="wave"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><span class="warn">!</span><span>30 s left</span><span class="timer">4:30</span></div><div class="cap">from 4:30 &#183; amber, still listening</div></div>
+      <div class="cell"><div class="pill"><svg class="hudspin" width="18" height="18" viewBox="0 0 24 24"><circle class="st ring" cx="12" cy="12" r="10"/></svg></div><div class="cap">5:00 or a tap &#183; finishes, writes everything</div></div>
+      <div class="cell"><div class="pill"><span class="muted">Discarded</span></div><div class="cap">Esc &#183; notice, nothing written</div></div>
+    </div></div>
+    <div class="half light"><div class="row">
+      <div class="cell"><div class="pill"><div class="wave"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><span>Listening</span><span class="timer">0:02</span></div><div class="cap">hold &#183; unchanged</div></div>
+      <div class="cell"><div class="pill"><div class="wave"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><span>Hands-free</span><span class="muted">tap &#8963;&#8997; to finish</span><span class="timer">1:12</span></div><div class="cap">after a double-tap &#183; keys are free</div></div>
+      <div class="cell"><div class="pill"><div class="wave"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><span class="warn">!</span><span>30 s left</span><span class="timer">4:30</span></div><div class="cap">from 4:30 &#183; amber, still listening</div></div>
+      <div class="cell"><div class="pill"><svg class="hudspin" width="18" height="18" viewBox="0 0 24 24"><circle class="st ring" cx="12" cy="12" r="10"/></svg></div><div class="cap">5:00 or a tap &#183; finishes, writes everything</div></div>
+      <div class="cell"><div class="pill"><span class="muted">Discarded</span></div><div class="cap">Esc &#183; notice, nothing written</div></div>
+    </div></div>
+  </div>
+  <div style="max-width:860px;margin-top:14px;">
+<div style="display:flex;gap:14px;padding:6px 0;border-top:1px solid var(--hair);"><div style="font-family:var(--mono);font-size:10.5px;color:var(--slate);width:230px;flex:none;padding-top:1px;">hold the shortcut</div><div style="font-size:13px;color:var(--ink2);">unchanged: hold, speak, release &#8594; text; a key pressed during a hold still cancels it (it was a shortcut)</div></div>
+<div style="display:flex;gap:14px;padding:6px 0;border-top:1px solid var(--hair);"><div style="font-family:var(--mono);font-size:10.5px;color:var(--slate);width:230px;flex:none;padding-top:1px;">double-tap the shortcut</div><div style="font-size:13px;color:var(--ink2);">two short taps of the bare hold (&#8963;&#8997; by default), each under 250&nbsp;ms, the second within 400&nbsp;ms of the first release &#8594; <b>Hands-free</b>; the mic goes live on the second tap and the first tap&#8217;s audio is not kept (a lone tap stays what it is today: silent, nothing written)</div></div>
+<div style="display:flex;gap:14px;padding:6px 0;border-top:1px solid var(--hair);"><div style="font-family:var(--mono);font-size:10.5px;color:var(--slate);width:230px;flex:none;padding-top:1px;">custom shortcut</div><div style="font-size:13px;color:var(--ink2);">the same gesture on the recorded combo: press it twice quickly to lock, once to finish</div></div>
+<div style="display:flex;gap:14px;padding:6px 0;border-top:1px solid var(--hair);"><div style="font-family:var(--mono);font-size:10.5px;color:var(--slate);width:230px;flex:none;padding-top:1px;">during hands-free</div><div style="font-size:13px;color:var(--ink2);">the keyboard is free: typing, shortcuts and app switching do not end it (the opposite of a hold); text is written at the cursor that is focused when it finishes</div></div>
+<div style="display:flex;gap:14px;padding:6px 0;border-top:1px solid var(--hair);"><div style="font-family:var(--mono);font-size:10.5px;color:var(--slate);width:230px;flex:none;padding-top:1px;">finish</div><div style="font-size:13px;color:var(--ink2);">one tap of the shortcut &#8594; processing &#8594; Done, the same path as a release</div></div>
+<div style="display:flex;gap:14px;padding:6px 0;border-top:1px solid var(--hair);"><div style="font-family:var(--mono);font-size:10.5px;color:var(--slate);width:230px;flex:none;padding-top:1px;">discard</div><div style="font-size:13px;color:var(--ink2);"><kbd class="keycap">esc</kbd> &#8594; a muted <b>Discarded</b> notice, nothing is written &#183; Reed only observes the key, so the frontmost app also receives it (closing a sheet, leaving full screen) &#8212; accepted: swallowing it would need Input Monitoring, a new permission</div></div>
+<div style="display:flex;gap:14px;padding:6px 0;border-top:1px solid var(--hair);"><div style="font-family:var(--mono);font-size:10.5px;color:var(--slate);width:230px;flex:none;padding-top:1px;">5-minute limit</div><div style="font-size:13px;color:var(--ink2);">audio past 5:00 used to be thrown away without a word; hands-free makes that reachable &#8594; amber <b>30&nbsp;s left</b> from 4:30, then it finishes on its own at 5:00 and writes everything; a hold that reaches 5:00 finishes the same way</div></div>
+<div style="display:flex;gap:14px;padding:6px 0;border-top:1px solid var(--hair);"><div style="font-family:var(--mono);font-size:10.5px;color:var(--slate);width:230px;flex:none;padding-top:1px;">mic lost mid-session</div><div style="font-size:13px;color:var(--ink2);">the existing capture-interrupted path, unchanged (it already ends a press)</div></div>
+<div style="display:flex;gap:14px;padding:6px 0;border-top:1px solid var(--hair);"><div style="font-family:var(--mono);font-size:10.5px;color:var(--slate);width:230px;flex:none;padding-top:1px;">where it is taught</div><div style="font-size:13px;color:var(--ink2);">Settings &#8250; Dictation, one hint line under the shortcut: <i>&#8220;Double-tap for hands-free. Tap again to finish, Esc to discard.&#8221;</i> &#183; no new setting, no onboarding step</div></div>
+  </div>
+  <p class="note" style="max-width:860px;margin-top:12px;"><b>Decided 2026-10-11 (P17):</b> Esc passes through to the frontmost app; Esc shows a <b>Discarded</b> notice rather than vanishing; taps are under 250&nbsp;ms and the second starts within 400&nbsp;ms of the first release.</p>
+
+
   <h2>HUD · Bluetooth warm-up</h2>
   <p class="note" style="margin-bottom:10px;">Today every mic shows <b>Listening</b> from hotkey-down. On AirPods that is false for 0.5&#8211;1.5&nbsp;s while macOS switches A2DP&#8594;HFP/SCO: the mic is deaf, output is muted, and the opening words do not exist. The <b>spinner, not the waveform</b>, is the point &#8212; a moving wave means &#8220;I can hear you&#8221;, which during the handshake is the same lie in a different form. Wired mics never enter this state.</p>
   <div class="stage">
@@ -1402,7 +1434,7 @@
         <h4>Dictation</h4><div class="shint">How you start a dictation.</div>
         <div class="sgroup"><div class="scard">
           <div class="srow" style="padding-bottom:9px;"><i class="sfi sfi-keyboard"></i><div class="grow"><div class="nm">Push-to-talk</div><div class="ds">Hold to record, release to transcribe.</div></div><span style="display:inline-flex;gap:4px;align-items:center;background:#fff;border:1px solid var(--hair);border-radius:8px;padding:4px 9px;"><span class="skey">&#8963;</span><span class="skey">&#8997;</span></span></div>
-          <div style="font-size:13px;color:var(--slate);padding:0 18px 13px 55px;line-height:1.45;">Press &#8963;, &#8997;, or &#8984; with a key - like &#8963;&#8997;R. Or press &#8963;&#8997;, &#8963;&#8984;, or &#8997;&#8984;.</div>
+          <div style="font-size:13px;color:var(--slate);padding:0 18px 13px 55px;line-height:1.45;">Press &#8963;, &#8997;, or &#8984; with a key - like &#8963;&#8997;R. Or press &#8963;&#8997;, &#8963;&#8984;, or &#8997;&#8984;.<br>Double-tap for hands-free. Tap again to finish, Esc to discard.</div>
           <div style="height:1px;background:#eef0f2;margin-left:47px;"></div>
           <div class="srow"><i class="sfi sfi-mic"></i><div class="grow"><div class="nm">Microphone</div><div class="ds">Built-in starts instantly; wired is close behind.</div></div><span class="spick"><span style="display:inline-block;max-width:150px;overflow:hidden;text-overflow:ellipsis;vertical-align:bottom;">System Default (MacBook Pro Microphone)</span><span class="cv">&#9662;</span></span></div>
         </div></div>
@@ -1643,6 +1675,7 @@
       <div class="cell"><div class="pill"><span class="warn red">!</span><span>Audio setup failed</span></div><div class="cap">hard</div></div>
       <div class="cell"><div class="pill"><span class="warn red">!</span><span>Something went wrong</span></div><div class="cap">hard &#183; unclassified</div></div>
       <div class="cell"><div class="pill"><span class="muted">Nothing to write</span></div><div class="cap">notice &#183; no glyph, fades ~1s</div></div>
+      <div class="cell"><div class="pill"><span class="muted">Discarded</span></div><div class="cap">notice &#183; Esc in hands-free</div></div>
     </div></div>
     <div class="half light"><div class="row">
       <div class="cell"><div class="pill"><span class="warn">!</span><span>Couldn't paste - Accessibility needed</span></div><div class="cap">actionable &#183; words stay on the clipboard</div></div>
@@ -1651,6 +1684,7 @@
       <div class="cell"><div class="pill"><span class="warn red">!</span><span>Audio setup failed</span></div><div class="cap">hard</div></div>
       <div class="cell"><div class="pill"><span class="warn red">!</span><span>Something went wrong</span></div><div class="cap">hard &#183; unclassified</div></div>
       <div class="cell"><div class="pill"><span class="muted">Nothing to write</span></div><div class="cap">notice &#183; no glyph, fades ~1s</div></div>
+      <div class="cell"><div class="pill"><span class="muted">Discarded</span></div><div class="cap">notice &#183; Esc in hands-free</div></div>
     </div></div>
   </div>
 
@@ -1670,6 +1704,7 @@
 <div style="display:flex;gap:14px;padding:6px 0;border-top:1px solid var(--hair);"><div style="font-family:var(--mono);font-size:10.5px;color:var(--slate);width:230px;flex:none;padding-top:1px;">On-device transcription failed</div><div style="font-size:13px;color:var(--ink2);"><b>actionable</b> &#183; any other recognizer error</div></div>
 <div style="display:flex;gap:14px;padding:6px 0;border-top:1px solid var(--hair);"><div style="font-family:var(--mono);font-size:10.5px;color:var(--slate);width:230px;flex:none;padding-top:1px;">Getting the speech model &#183; Speech model still downloading - N% &#183; Preparing the speech model &#183; The speech model didn't download</div><div style="font-size:13px;color:var(--ink2);"><b>actionable</b> &#183; refused at the press, nothing recorded; the menu notice carries progress, Cancel or Try again (Settings &#8250; Speech model repair)</div></div>
 <div style="display:flex;gap:14px;padding:6px 0;border-top:1px solid var(--hair);"><div style="font-family:var(--mono);font-size:10.5px;color:var(--slate);width:230px;flex:none;padding-top:1px;">Nothing to write</div><div style="font-size:13px;color:var(--ink2);"><b>notice, not an error</b> &#183; silence, a cough or a known silence artifact &#183; muted, no glyph, fades ~1&nbsp;s</div></div>
+<div style="display:flex;gap:14px;padding:6px 0;border-top:1px solid var(--hair);"><div style="font-family:var(--mono);font-size:10.5px;color:var(--slate);width:230px;flex:none;padding-top:1px;">Discarded</div><div style="font-size:13px;color:var(--ink2);"><b>notice, not an error</b> &#183; Esc during hands-free; nothing is written &#183; muted, no glyph, fades ~1&nbsp;s</div></div>
   </div>
   <p class="note" style="margin-top:12px;">Toasts are separate: the no-signal <b>We couldn't hear you</b> card and the Bluetooth nudge live in Using Reed. Settings draws no inline error boxes in this build &#8212; the sign-in, checkout and plan errors that used them left with the paid features; a failed model download reports in the onboarding Speech model step and the menu notice.</p>
 
@@ -1679,36 +1714,7 @@
 <span id="proposals"></span><section class="segment" id="seg-proposals">
   <h2>Proposals &#8212; nothing here is shipped</h2>
   <h3 style="margin-top:6px;">Proposals &#183; pending changes</h3>
-  <p class="lede">Every unapproved design change lives on this page and nowhere else. The home sections always show the app as it ships. Approval moves a proposal to its section, drawn in final form; rejection deletes it. A proposal never edits the section it targets. <em>Pending: P17.</em></p>
-
-  <h3 style="margin-top:26px;">P17 &#183; Hands-free dictation <span style="font-weight:400;color:var(--slate)">&#8212; double-tap the shortcut to lock the mic, tap to finish, Esc to discard (PROPOSED 2026-10-11)</span></h3>
-  <p class="lede">Holding a key through a two-minute message is tiring and rules out long dictation. Hands-free keeps hold-to-talk exactly as it is and adds one gesture on the same shortcut: <b>double-tap to lock</b>. No new setting, no new permission, nothing leaves the Mac. It also closes a gap it would otherwise widen: the recorder silently drops audio after five minutes.</p>
-  <div class="stage" style="flex-direction:column;">
-    <div class="half dark"><div class="row">
-      <div class="cell"><div class="pill"><div class="wave"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><span>Listening</span><span class="timer">0:02</span></div><div class="cap">hold &#183; unchanged</div></div>
-      <div class="cell"><div class="pill"><div class="wave"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><span>Hands-free</span><span class="muted">tap &#8963;&#8997; to finish</span><span class="timer">1:12</span></div><div class="cap">after a double-tap &#183; keys are free</div></div>
-      <div class="cell"><div class="pill"><div class="wave"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><span class="warn">!</span><span>30 s left</span><span class="timer">4:30</span></div><div class="cap">from 4:30 &#183; amber, still listening</div></div>
-      <div class="cell"><div class="pill"><svg class="hudspin" width="18" height="18" viewBox="0 0 24 24"><circle class="st ring" cx="12" cy="12" r="10"/></svg></div><div class="cap">5:00 or a tap &#183; finishes, writes everything</div></div>
-    </div></div>
-    <div class="half light"><div class="row">
-      <div class="cell"><div class="pill"><div class="wave"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><span>Listening</span><span class="timer">0:02</span></div><div class="cap">hold &#183; unchanged</div></div>
-      <div class="cell"><div class="pill"><div class="wave"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><span>Hands-free</span><span class="muted">tap &#8963;&#8997; to finish</span><span class="timer">1:12</span></div><div class="cap">after a double-tap &#183; keys are free</div></div>
-      <div class="cell"><div class="pill"><div class="wave"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><span class="warn">!</span><span>30 s left</span><span class="timer">4:30</span></div><div class="cap">from 4:30 &#183; amber, still listening</div></div>
-      <div class="cell"><div class="pill"><svg class="hudspin" width="18" height="18" viewBox="0 0 24 24"><circle class="st ring" cx="12" cy="12" r="10"/></svg></div><div class="cap">5:00 or a tap &#183; finishes, writes everything</div></div>
-    </div></div>
-  </div>
-  <div style="max-width:860px;margin-top:14px;">
-<div style="display:flex;gap:14px;padding:6px 0;border-top:1px solid var(--hair);"><div style="font-family:var(--mono);font-size:10.5px;color:var(--slate);width:230px;flex:none;padding-top:1px;">hold the shortcut</div><div style="font-size:13px;color:var(--ink2);">unchanged: hold, speak, release &#8594; text; a key pressed during a hold still cancels it (it was a shortcut)</div></div>
-<div style="display:flex;gap:14px;padding:6px 0;border-top:1px solid var(--hair);"><div style="font-family:var(--mono);font-size:10.5px;color:var(--slate);width:230px;flex:none;padding-top:1px;">double-tap the shortcut</div><div style="font-size:13px;color:var(--ink2);">two short taps of the bare hold (&#8963;&#8997; by default), each under 250&nbsp;ms, the second within 400&nbsp;ms of the first release &#8594; <b>Hands-free</b>; the mic goes live on the second tap and the first tap&#8217;s audio is not kept (a lone tap stays what it is today: silent, nothing written)</div></div>
-<div style="display:flex;gap:14px;padding:6px 0;border-top:1px solid var(--hair);"><div style="font-family:var(--mono);font-size:10.5px;color:var(--slate);width:230px;flex:none;padding-top:1px;">custom shortcut</div><div style="font-size:13px;color:var(--ink2);">the same gesture on the recorded combo: press it twice quickly to lock, once to finish</div></div>
-<div style="display:flex;gap:14px;padding:6px 0;border-top:1px solid var(--hair);"><div style="font-family:var(--mono);font-size:10.5px;color:var(--slate);width:230px;flex:none;padding-top:1px;">during hands-free</div><div style="font-size:13px;color:var(--ink2);">the keyboard is free: typing, shortcuts and app switching do not end it (the opposite of a hold); text is written at the cursor that is focused when it finishes</div></div>
-<div style="display:flex;gap:14px;padding:6px 0;border-top:1px solid var(--hair);"><div style="font-family:var(--mono);font-size:10.5px;color:var(--slate);width:230px;flex:none;padding-top:1px;">finish</div><div style="font-size:13px;color:var(--ink2);">one tap of the shortcut &#8594; processing &#8594; Done, the same path as a release</div></div>
-<div style="display:flex;gap:14px;padding:6px 0;border-top:1px solid var(--hair);"><div style="font-family:var(--mono);font-size:10.5px;color:var(--slate);width:230px;flex:none;padding-top:1px;">discard</div><div style="font-size:13px;color:var(--ink2);"><kbd class="keycap">esc</kbd> &#8594; the pill fades, nothing is written &#183; Reed only observes the key, so the frontmost app also receives it (closing a sheet, leaving full screen) &#8212; swallowing it would need Input Monitoring, a new permission, which this proposal does not ask for</div></div>
-<div style="display:flex;gap:14px;padding:6px 0;border-top:1px solid var(--hair);"><div style="font-family:var(--mono);font-size:10.5px;color:var(--slate);width:230px;flex:none;padding-top:1px;">5-minute limit</div><div style="font-size:13px;color:var(--ink2);">today audio past 5:00 is silently thrown away; hands-free makes that reachable &#8594; amber <b>30&nbsp;s left</b> from 4:30, then it finishes on its own at 5:00 and writes everything; a hold that reaches 5:00 finishes the same way</div></div>
-<div style="display:flex;gap:14px;padding:6px 0;border-top:1px solid var(--hair);"><div style="font-family:var(--mono);font-size:10.5px;color:var(--slate);width:230px;flex:none;padding-top:1px;">mic lost mid-session</div><div style="font-size:13px;color:var(--ink2);">the existing capture-interrupted path, unchanged (it already ends a press)</div></div>
-<div style="display:flex;gap:14px;padding:6px 0;border-top:1px solid var(--hair);"><div style="font-family:var(--mono);font-size:10.5px;color:var(--slate);width:230px;flex:none;padding-top:1px;">where it is taught</div><div style="font-size:13px;color:var(--ink2);">Settings &#8250; Dictation, one hint line under the shortcut: <i>&#8220;Double-tap for hands-free. Tap again to finish, Esc to discard.&#8221;</i> &#183; no new setting, no onboarding step</div></div>
-  </div>
-  <p class="note" style="max-width:860px;margin-top:12px;"><b>To decide:</b> (1) Esc passing through to the frontmost app is acceptable; (2) Esc discards silently, with no &#8220;Discarded&#8221; notice; (3) the 250 / 400&nbsp;ms tap timings, to be tuned on a real keyboard before shipping.</p>
+  <p class="lede">Every unapproved design change lives on this page and nowhere else. The home sections always show the app as it ships. Approval moves a proposal to its section, drawn in final form; rejection deletes it. A proposal never edits the section it targets. <em>Nothing pending.</em></p>
 
   </section>
 
@@ -1733,7 +1739,7 @@ window.addEventListener('hashchange', () => showSeg(location.hash.slice(1), fals
 // Proposals has no review controls and always reads as not reviewed. A stored record counts only with this exact revision, a boolean
 // done and a numeric timestamp; anything else (older content, invalid JSON,
 // done: "false") reads as not yet reviewed.
-const REVIEW_REVISION = {system: '2026-09-21', onboarding: '2026-09-22', using: '2026-09-15', settings: '2026-09-21', errors: '2026-09-15'};
+const REVIEW_REVISION = {system: '2026-09-21', onboarding: '2026-09-22', using: '2026-10-11', settings: '2026-10-11', errors: '2026-10-11'};
 function reviewable(id){ return Object.prototype.hasOwnProperty.call(REVIEW_REVISION, id); }
 function reviewState(id){
   if (!reviewable(id)) return null;

@@ -1,4 +1,5 @@
-import Foundation
+import AppKit
+import KeyboardShortcuts
 
 /// Hands-free dictation (P17, DECIDED 2026-10-11; design: Using Reed › HUD ·
 /// hands-free): double-tap the shortcut to lock the mic, tap to finish, Esc to
@@ -14,8 +15,13 @@ extension Coordinator {
     /// A locked session whose capture is still live. The hold monitor reads
     /// this at every event, so a session that ended any other way is never
     /// mistaken for a live one.
-    var isHandsFreeLive: Bool {
-        guard handsFree else { return false }
+    var isHandsFreeLive: Bool { handsFree && isCaptureLive }
+
+    /// The press still owns a live capture. Warming counts: a capture retry
+    /// (handleCaptureInterrupted) passes back through it mid-press, and the
+    /// one definition keeps every hands-free rule from mistaking that for
+    /// the end of the press (review 2026-10-11).
+    var isCaptureLive: Bool {
         switch state {
         case .warming, .recording: return true
         default: return false
@@ -39,6 +45,16 @@ extension Coordinator {
         }
         holdMonitor.onEscape = { [weak self] in
             Task { @MainActor in self?.discardHandsFree() }
+        }
+        // The recorded combo breaks its tap sequence on the same events the
+        // hold does (review 2026-10-11): any other key, and a shortcut change.
+        holdMonitor.onKeyDown = { [weak self] keyCode, modifiers in
+            self?.comboKeyDown(keyCode: keyCode, modifiers: modifiers)
+        }
+        NotificationCenter.default.addObserver(
+            forName: PushToTalkTrigger.didChange, object: nil, queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated { self?.shortcutTaps.reset() }
         }
     }
 
@@ -65,10 +81,7 @@ extension Coordinator {
     /// Clears the session's flags whenever the state leaves live capture —
     /// every exit (finish, Esc, limit, lost mic, error) passes through here.
     func endHandsFreeIfCaptureEnded() {
-        switch state {
-        case .warming, .recording: return
-        default: break
-        }
+        guard !isCaptureLive else { return }
         handsFree = false
         recordingLimitNear = false
         recordingLimitTask?.cancel()
@@ -77,18 +90,20 @@ extension Coordinator {
 
     /// Warn before the limit, then finish there. Generation-checked: the
     /// press is captured before the first await, so a timer that outlives its
-    /// press can never finish the next one.
+    /// press can never finish the next one. Liveness is `isCaptureLive`, not
+    /// `.recording`: a press caught mid-retry at either boundary is still the
+    /// same press, and skipping it left the capture running past the limit.
+    /// At the limit a warming press takes the release path, as a tap would.
     func armRecordingLimit(generation: Int) {
         recordingLimitTask?.cancel()
         let (warnAfter, finishAfter) = recordingLimitSchedule
         recordingLimitTask = Task { @MainActor [weak self] in
             try? await Task.sleep(nanoseconds: UInt64(warnAfter * 1_000_000_000))
-            guard let self, !Task.isCancelled, generation == self.pressGeneration else { return }
-            guard case .recording = self.state else { return }
+            guard let self, !Task.isCancelled, generation == self.pressGeneration,
+                  self.isCaptureLive else { return }
             self.recordingLimitNear = true
             try? await Task.sleep(nanoseconds: UInt64((finishAfter - warnAfter) * 1_000_000_000))
-            guard !Task.isCancelled, generation == self.pressGeneration else { return }
-            guard case .recording = self.state else { return }
+            guard !Task.isCancelled, generation == self.pressGeneration, self.isCaptureLive else { return }
             log.info("recording limit reached — finishing")
             await self.stopAndProcess()
         }
@@ -130,6 +145,16 @@ extension Coordinator {
                 await self.stopAndProcess()
             }
         }
+    }
+
+    /// A key that is not the combo itself breaks the combo's tap sequence.
+    func comboKeyDown(keyCode: UInt16, modifiers: NSEvent.ModifierFlags) {
+        if let combo = KeyboardShortcuts.getShortcut(for: .toggleDictation),
+           Int(keyCode) == combo.carbonKeyCode,
+           modifiers == combo.modifiers.intersection(ModifierHoldMonitor.relevant) {
+            return
+        }
+        shortcutTaps.reset()
     }
 
     struct ShortcutPress {

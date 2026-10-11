@@ -36,6 +36,10 @@ final class ModifierHoldMonitor {
     var onFinish: (() -> Void)?
     /// Esc during a locked session: discard.
     var onEscape: (() -> Void)?
+    /// Every key press, with its modifiers, before the monitor's own rules:
+    /// the recorded combo keeps its tap sequence in the coordinator and must
+    /// break it on typing exactly as this monitor breaks its own.
+    var onKeyDown: ((_ keyCode: UInt16, _ modifiers: NSEvent.ModifierFlags) -> Void)?
     /// Whether a hands-free session is live. The coordinator is the
     /// authority: a session that ended any other way (the five-minute limit,
     /// a lost mic, an error) reads false here at the next event, so no stale
@@ -50,7 +54,7 @@ final class ModifierHoldMonitor {
     private let armDelay: TimeInterval
     /// The modifier bits that make up "the whole set" — caps lock is excluded so
     /// a stray caps-lock state never blocks the trigger match.
-    private static let relevant: NSEvent.ModifierFlags = [.shift, .control, .option, .command]
+    static let relevant: NSEvent.ModifierFlags = [.shift, .control, .option, .command]
 
     /// `finishing`: the trigger is down during a locked session; a clean
     /// release finishes it, a chord does not.
@@ -134,7 +138,7 @@ final class ModifierHoldMonitor {
     private func handle(_ event: NSEvent) {
         switch event.type {
         case .flagsChanged: flagsChanged(event.modifierFlags.intersection(Self.relevant))
-        case .keyDown: keyDown(keyCode: event.keyCode)
+        case .keyDown: keyDown(keyCode: event.keyCode, modifiers: event.modifierFlags.intersection(Self.relevant))
         default: break
         }
     }
@@ -213,7 +217,8 @@ final class ModifierHoldMonitor {
         }
     }
 
-    func keyDown(keyCode: UInt16 = 0) {
+    func keyDown(keyCode: UInt16 = 0, modifiers: NSEvent.ModifierFlags = []) {
+        onKeyDown?(keyCode, modifiers)
         if isLocked() {
             // Hands-free: the keyboard is free. Esc discards; a key while the
             // trigger is down was a shortcut (⌃⌥C), so that press finishes

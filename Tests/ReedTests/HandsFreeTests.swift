@@ -1,4 +1,5 @@
 import AppKit
+import KeyboardShortcuts
 import XCTest
 @testable import Reed
 
@@ -330,6 +331,122 @@ final class HandsFreeTests: XCTestCase {
         taps.released(pressedAt: 30, releasedAt: 30.1, wasSecondTap: false)
         taps.reset()
         XCTAssertFalse(taps.pressIsSecondTap(at: 30.2), "a reset closes the window")
+    }
+
+    // MARK: - review 2026-10-11
+
+    /// A capture retry passes the press back through warming. Caught there
+    /// at 4:30, the timer used to exit for good and the capture ran on past
+    /// 5:00.
+    func testARetryAtTheWarningKeepsTheDeadline() async throws {
+        let coordinator = Coordinator()
+        coordinator.state = .recording
+        coordinator.lockHandsFree()
+        coordinator.recordingLimitSchedule = (warn: 0.02, finish: 0.3)
+        coordinator.armRecordingLimit(generation: coordinator.pressGeneration)
+        coordinator.state = .warming  // the retry; pressGeneration unchanged
+        try await eventually { coordinator.recordingLimitNear }
+        XCTAssertTrue(coordinator.recordingLimitNear, "a retrying press is still the press: it warns")
+        coordinator.state = .recording
+        coordinator.realSignalConfirmedForCurrentRecording = true
+        coordinator.holdStartedAt = Date()
+        await coordinator.recordingLimitTask?.value
+        XCTAssertEqual(coordinator.state, .idle, "the recovered press still finishes at its deadline")
+    }
+
+    func testARetryAtTheLimitStillFinishes() async throws {
+        let coordinator = Coordinator()
+        coordinator.state = .recording
+        coordinator.lockHandsFree()
+        coordinator.recordingLimitSchedule = (warn: 0.01, finish: 0.1)
+        coordinator.armRecordingLimit(generation: coordinator.pressGeneration)
+        try await eventually { coordinator.recordingLimitNear }
+        coordinator.state = .warming
+        coordinator.holdStartedAt = Date()
+        await coordinator.recordingLimitTask?.value
+        XCTAssertEqual(coordinator.state, .idle, "the deadline stops a press even while its retry is warming")
+    }
+
+    /// The combo keeps its own tap sequence; typing must break it exactly as
+    /// it breaks the hold's. Drives the production handlers; the busy state
+    /// refuses the real start.
+    func testTypingBreaksTheComboSequence() {
+        let coordinator = Coordinator()
+        coordinator.state = .transcribing
+        coordinator.shortcutPressed()
+        coordinator.shortcutReleased()
+        coordinator.holdMonitor.keyDown(keyCode: 0)  // "a"
+        coordinator.shortcutPressed()
+        XCTAssertEqual(coordinator.shortcutPress?.isSecondTap, false)
+        coordinator.shortcutReleased()
+    }
+
+    func testAShortcutChangeBreaksTheComboSequence() {
+        let coordinator = Coordinator()
+        coordinator.state = .transcribing
+        coordinator.shortcutPressed()
+        coordinator.shortcutReleased()
+        NotificationCenter.default.post(name: PushToTalkTrigger.didChange, object: nil)
+        coordinator.shortcutPressed()
+        XCTAssertEqual(coordinator.shortcutPress?.isSecondTap, false)
+        coordinator.shortcutReleased()
+    }
+
+    /// The combo's own key event must NOT count as typing, or no second tap
+    /// could ever land if the global monitor sees it.
+    func testTheComboItselfDoesNotBreakItsSequence() {
+        let saved = KeyboardShortcuts.getShortcut(for: .toggleDictation)
+        defer { KeyboardShortcuts.setShortcut(saved, for: .toggleDictation) }
+        let combo = KeyboardShortcuts.Shortcut(.r, modifiers: [.control, .option])
+        KeyboardShortcuts.setShortcut(combo, for: .toggleDictation)
+        let coordinator = Coordinator()
+        coordinator.state = .transcribing
+        coordinator.shortcutPressed()
+        coordinator.shortcutReleased()
+        coordinator.holdMonitor.keyDown(keyCode: UInt16(combo.carbonKeyCode), modifiers: [.control, .option])
+        coordinator.shortcutPressed()
+        XCTAssertEqual(coordinator.shortcutPress?.isSecondTap, true)
+        coordinator.shortcutReleased()
+        // The same letter without the combo's modifiers is ordinary typing.
+        coordinator.shortcutPressed()
+        coordinator.shortcutReleased()
+        coordinator.holdMonitor.keyDown(keyCode: UInt16(combo.carbonKeyCode))
+        coordinator.shortcutPressed()
+        XCTAssertEqual(coordinator.shortcutPress?.isSecondTap, false)
+        coordinator.shortcutReleased()
+    }
+
+    /// The hint names the live shortcut: a retarget mid-session must move it.
+    func testTheFinishHintFollowsAShortcutChange() async throws {
+        let saved = UserDefaults.standard.object(forKey: PushToTalkTrigger.defaultsKey)
+        let savedCombo = KeyboardShortcuts.getShortcut(for: .toggleDictation)
+        defer {
+            if let saved { UserDefaults.standard.set(saved, forKey: PushToTalkTrigger.defaultsKey) }
+            else { UserDefaults.standard.removeObject(forKey: PushToTalkTrigger.defaultsKey) }
+            KeyboardShortcuts.setShortcut(savedCombo, for: .toggleDictation)
+        }
+        UserDefaults.standard.set(PushToTalkTrigger.controlOption.rawValue, forKey: PushToTalkTrigger.defaultsKey)
+        let coordinator = Coordinator()
+        let overlay = OverlayController()
+        overlay.attach(to: coordinator)
+        coordinator.state = .recording
+        coordinator.lockHandsFree()
+        try await eventually { overlay.viewModel.handsFreeHint != nil }
+        XCTAssertEqual(overlay.viewModel.handsFreeHint, "tap ⌃⌥ to finish")
+
+        UserDefaults.standard.set(PushToTalkTrigger.controlCommand.rawValue, forKey: PushToTalkTrigger.defaultsKey)
+        NotificationCenter.default.post(name: PushToTalkTrigger.didChange, object: nil)
+        try await eventually { overlay.viewModel.handsFreeHint == "tap ⌃⌘ to finish" }
+        XCTAssertEqual(coordinator.holdMonitor.currentTrigger, [.control, .command])
+        XCTAssertTrue(coordinator.isHandsFreeLive)
+        XCTAssertEqual(overlay.viewModel.handsFreeHint, "tap ⌃⌘ to finish")
+
+        // Hold → recorded combo, the same way the recorder field does it.
+        let combo = KeyboardShortcuts.Shortcut(.r, modifiers: [.control, .option])
+        KeyboardShortcuts.setShortcut(combo, for: .toggleDictation)
+        PushToTalkTrigger.custom.apply()
+        try await eventually { overlay.viewModel.handsFreeHint == "tap \(combo.description) to finish" }
+        XCTAssertEqual(overlay.viewModel.handsFreeHint, "tap \(combo.description) to finish")
     }
 
     // MARK: - the HUD

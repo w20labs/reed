@@ -36,9 +36,17 @@ final class OverlayController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] preparing in self?.viewModel.micIsPreparing = preparing }
             .store(in: &cancellables)
+        // The finish hint names the LIVE shortcut: re-read on every trigger
+        // or combo change, not only when the session locks — a retarget
+        // mid-session left it advertising keys that no longer finish
+        // (review 2026-10-11).
+        let shortcutChanged = NotificationCenter.default.publisher(for: PushToTalkTrigger.didChange)
+            .map { _ in () }
+            .prepend(())
         coordinator.$handsFree
+            .combineLatest(shortcutChanged)
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] locked in
+            .sink { [weak self] locked, _ in
                 self?.viewModel.handsFreeHint = locked ? "tap \(PushToTalkTrigger.finishKeysLabel) to finish" : nil
             }
             .store(in: &cancellables)

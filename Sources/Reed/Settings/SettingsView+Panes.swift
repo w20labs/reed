@@ -72,7 +72,7 @@ extension SettingsView {
                             subtitle: "Hold to record, release to transcribe.") {
                         PushToTalkField()
                     }
-                    Text("Press ⌃, ⌥, or ⌘ with a key - like ⌃⌥R. Or press ⌃⌥, ⌃⌘, or ⌥⌘.")
+                    Text("Press ⌃, ⌥, or ⌘ with a key - like ⌃⌥R. Or press ⌃⌥, ⌃⌘, or ⌥⌘.\nDouble-tap for hands-free. Tap again to finish, Esc to discard.")
                         .font(SettingsType.rowSubtitle)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)

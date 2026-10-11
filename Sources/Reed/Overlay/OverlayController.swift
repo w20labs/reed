@@ -36,6 +36,24 @@ final class OverlayController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] preparing in self?.viewModel.micIsPreparing = preparing }
             .store(in: &cancellables)
+        // The finish hint names the LIVE shortcut: re-read on every trigger
+        // or combo change, not only when the session locks — a retarget
+        // mid-session left it advertising keys that no longer finish
+        // (review 2026-10-11).
+        let shortcutChanged = NotificationCenter.default.publisher(for: PushToTalkTrigger.didChange)
+            .map { _ in () }
+            .prepend(())
+        coordinator.$handsFree
+            .combineLatest(shortcutChanged)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] locked, _ in
+                self?.viewModel.handsFreeHint = locked ? "tap \(PushToTalkTrigger.finishKeysLabel) to finish" : nil
+            }
+            .store(in: &cancellables)
+        coordinator.$recordingLimitNear
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] near in self?.viewModel.recordingLimitNear = near }
+            .store(in: &cancellables)
         coordinator.$activeError
             .receive(on: DispatchQueue.main)
             .sink { [weak self] error in self?.viewModel.errorIsHard = error?.severity == .hard }
@@ -204,10 +222,13 @@ final class OverlayController {
         self.panel = panel
     }
 
-    /// The pill (max 300 pt wide) centred in a panel with room on every side
-    /// for its shadow (radius 12, 8 pt down). A panel that hugs the pill cuts
-    /// the shadow off in a straight line, which reads as a grey rectangle.
-    static let panelSize = NSSize(width: 364, height: 120)
+    /// The pill centred in a panel with room on every side for its shadow
+    /// (radius 12, 8 pt down). A panel that hugs the pill cuts the shadow off
+    /// in a straight line, which reads as a grey rectangle. The widest pill is
+    /// hands-free with its finish hint and timer (P17): with a long recorded
+    /// combo (⌃⌥⇧⌘F12) it cut the shadow in the old 364 pt panel — measured
+    /// by HandsFreeTests' render of the widest pill.
+    static let panelSize = NSSize(width: 440, height: 120)
 
     /// The pill centres itself in the fixed panel, so its content must never
     /// size the panel: a content-sized panel follows the pill's width as its

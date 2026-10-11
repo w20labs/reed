@@ -38,6 +38,14 @@ enum PushToTalkTrigger: String, CaseIterable {
 
     var isHold: Bool { self != .custom }
 
+    /// What finishes a hands-free session, for the HUD hint ("tap ⌃⌥ to
+    /// finish"): the hold's keycap, or the recorded combo.
+    @MainActor static var finishKeysLabel: String {
+        let trigger = current
+        if trigger.isHold { return trigger.keycap }
+        return KeyboardShortcuts.getShortcut(for: .toggleDictation)?.description ?? "the shortcut"
+    }
+
     /// The hold a released bare-modifier set maps to, if any — the recorder's
     /// combo→hold direction (`HotkeyRecorderField`). Pure and static so the
     /// mapping is unit-testable without AppKit event plumbing.

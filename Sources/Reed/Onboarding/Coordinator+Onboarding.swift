@@ -67,11 +67,7 @@ extension Coordinator {
                     self?.onboardingWindow?.close()
                 }
             )
-            NotificationCenter.default.addObserver(
-                forName: NSWindow.willCloseNotification,
-                object: window,
-                queue: .main
-            ) { _ in
+            releaseOnClose(window, from: \.onboardingWindow) {
                 // Closing DEFERS, it does not complete (P12 follow-up,
                 // 2026-08-07 — the old mark-complete-on-close let a red-button
                 // dismissal skip terms acceptance, the permission coaching,
@@ -81,7 +77,8 @@ extension Coordinator {
                 // this window back (Coordinator.start's gate). This also
                 // subsumes the old quit-vs-dismissal carve-out
                 // (`isTerminating`): close persists nothing either way, and
-                // the saved step/path always resumes the flow.
+                // the saved step/path always resumes the flow — including in
+                // the fresh window the next open builds.
                 NSApp.setActivationPolicy(.accessory)
             }
             onboardingWindow = window

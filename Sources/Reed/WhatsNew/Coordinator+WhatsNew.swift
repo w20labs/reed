@@ -44,11 +44,7 @@ extension Coordinator {
             // Either close path (button or red-dot) records the version as
             // seen. We also revert to .accessory so Reed disappears from the
             // Dock again — same dance onboarding does on close.
-            NotificationCenter.default.addObserver(
-                forName: NSWindow.willCloseNotification,
-                object: window,
-                queue: .main
-            ) { _ in
+            releaseOnClose(window, from: \.whatsNewWindow) {
                 WhatsNew.markSeen()
                 NSApp.setActivationPolicy(.accessory)
             }

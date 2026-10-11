@@ -620,6 +620,28 @@ final class HandsFreeTests: XCTestCase {
 
     // MARK: - the HUD
 
+    /// The widest pill the HUD draws — hands-free, a long recorded combo in
+    /// the hint, a two-digit timer — must still fit the fixed panel with its
+    /// shadow fading before every edge (the 0.3.4 grey-rectangle rule).
+    func testTheWidestHandsFreePillFitsThePanelWithItsShadow() throws {
+        _ = NSApplication.shared
+        for limitNear in [false, true] {
+            let controller = OverlayController()
+            controller.viewModel.state = .recording
+            controller.viewModel.isOnScreen = true
+            controller.viewModel.elapsed = 4 * 60 + 59
+            // Measured 2026-10-11: ⌃⌥⇧⌘F12 cut the shadow in the old 364 pt panel.
+            let combo = KeyboardShortcuts.Shortcut(.f12, modifiers: [.control, .option, .shift, .command])
+            controller.viewModel.handsFreeHint = "tap \(combo.description) to finish"
+            controller.viewModel.recordingLimitNear = limitNear
+            let host = controller.makeContentView()
+            host.frame = NSRect(origin: .zero, size: OverlayController.panelSize)
+            host.layoutSubtreeIfNeeded()
+            XCTAssertLessThan(try maxEdgeAlpha(host), 0.02, "limitNear=\(limitNear): the pill or its shadow reaches the panel edge")
+        }
+    }
+
+
     func testThePillNamesTheSession() {
         let model = OverlayViewModel()
         model.state = .recording

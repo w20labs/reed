@@ -225,8 +225,9 @@ final class OverlayController {
     /// The pill centred in a panel with room on every side for its shadow
     /// (radius 12, 8 pt down). A panel that hugs the pill cuts the shadow off
     /// in a straight line, which reads as a grey rectangle. The widest pill is
-    /// hands-free with its finish hint and timer (P17) — ~340 pt on a recorded
-    /// combo, past the 300 the old 364 was cut for.
+    /// hands-free with its finish hint and timer (P17): with a long recorded
+    /// combo (⌃⌥⇧⌘F12) it cut the shadow in the old 364 pt panel — measured
+    /// by HandsFreeTests' render of the widest pill.
     static let panelSize = NSSize(width: 440, height: 120)
 
     /// The pill centres itself in the fixed panel, so its content must never

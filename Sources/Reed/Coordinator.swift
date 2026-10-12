@@ -141,6 +141,14 @@ final class Coordinator: ObservableObject {
     // 0.5-1.5 s. Holding warming open that long against the wired 2 s timeout
     // would turn a normal AirPods connect into "Microphone didn't start".
     static let warmingTimeoutBluetooth: UInt64 = 5_000_000_000  // 5 s
+    // The budgets above count from the moment the mic STARTED. A cold start
+    // with the default devices on AirPods spent 1.5-5 s before that moment
+    // (2026-10-12), and a press-time 2 s clock called it a dead mic while it
+    // was still coming up. A start that never returns is still caught here.
+    static let warmingStartCap: UInt64 = 8_000_000_000  // 8 s
+    /// Test seams: shorter budgets, and a stand-in for `recorder.start`.
+    var warmingBudgetsForTesting: (start: UInt64, frames: UInt64)?
+    var recorderStartForTesting: ((Date) async throws -> Void)?
 
     init() {
         // Not a plain read: drops a pin that names a Bluetooth mic, which

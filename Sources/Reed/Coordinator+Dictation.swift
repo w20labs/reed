@@ -123,12 +123,16 @@ extension Coordinator {
 
     /// Arm a timer that flips a stuck .warming into an error so the HUD never
     /// lies about listening. Cancelled when audio arrives (onCaptureReady), the
-    /// user releases during warmup, or start() throws.
-    func startWarmingWatchdog() {
+    /// user releases during warmup, or start() throws. Armed twice per press:
+    /// at the press with `forStart` (a start that never returns), then again
+    /// once the mic has started, for the first frames.
+    func startWarmingWatchdog(forStart: Bool = false) {
         warmingWatchdog?.cancel()
+        let frames = currentMicIsBluetooth ? Coordinator.warmingTimeoutBluetooth : Coordinator.warmingTimeout
+        let budget = forStart
+            ? warmingBudgetsForTesting?.start ?? Coordinator.warmingStartCap
+            : warmingBudgetsForTesting?.frames ?? frames
         warmingWatchdog = Task { @MainActor [weak self] in
-            let budget = self?.currentMicIsBluetooth == true
-                ? Coordinator.warmingTimeoutBluetooth : Coordinator.warmingTimeout
             try? await Task.sleep(nanoseconds: budget)
             guard let self, !Task.isCancelled else { return }
             guard case .warming = self.state else { return }
@@ -152,7 +156,8 @@ extension Coordinator {
             let dictationError = DictationError.generic(
                 headline: "Microphone didn't start",
                 detail: "Reed didn't start hearing audio - a device or driver hiccup. Try again.",
-                raw: "warming watchdog: no audio within 2 s")
+                raw: forStart ? "warming watchdog: the mic start never returned"
+                    : "warming watchdog: no audio after the mic started")
             self.activeError = dictationError
             self.state = .error(dictationError.headline)
             self.autoClearErrorAfterDelay()
@@ -181,7 +186,7 @@ extension Coordinator {
         // state, whatever the transport.
         micIsPreparing = currentMicIsBluetooth || !recorder.isWarm
         state = .warming
-        startWarmingWatchdog()
+        startWarmingWatchdog(forStart: true)
         // Generation-checked like startRecorder: the press can end while this
         // restart is still suspended, and its stop() runs before capture is
         // armed — without the check the retry armed a zombie live mic
@@ -190,7 +195,11 @@ extension Coordinator {
         Task { @MainActor [weak self] in
             guard let self else { return }
             do {
-                try await self.recorder.start(pressedAt: self.holdStartedAt ?? Date())
+                try await self.startMic()
+                // Same clock as startRecorder: first frames from the restart.
+                if generation == self.pressGeneration, case .warming = self.state {
+                    self.startWarmingWatchdog()
+                }
                 if generation != self.pressGeneration {
                     // Same rapid re-press rule as startRecorder: a newer
                     // press's live capture must survive the stale teardown.

@@ -121,9 +121,13 @@ extension AudioRecorder {
             try? await Task.sleep(nanoseconds: UInt64(Self.keepWarmIdleTimeout * 1_000_000_000))
             guard !Task.isCancelled else { return }
             await MainActor.run {
-                guard let self, self.isHoldingWarm else { return }
-                klog.info("keep-warm idle timeout — releasing the device")
-                self.releaseWarmHold()
+                // Through the engine gate, re-checked when it runs: a start
+                // holding the gate may resume this hold first.
+                self?.engineGate.mutate { [weak self] in
+                    guard let self, self.isHoldingWarm else { return }
+                    klog.info("keep-warm idle timeout — releasing the device")
+                    self.releaseWarmHold()
+                }
             }
         }
     }
@@ -204,8 +208,11 @@ extension AudioRecorder {
     /// scratch (see the drift check in `start()`), same as any other cold
     /// start.
     private func handleDefaultDeviceChanged() {
-        guard isHoldingWarm else { return }
-        klog.error("default device changed while holding warm — releasing rather than risk a stuck indicator")
-        releaseWarmHold()
+        // Gated like the idle timeout: a start mid-resume owns the engine.
+        engineGate.mutate { [weak self] in
+            guard let self, self.isHoldingWarm else { return }
+            klog.error("default device changed while holding warm — releasing rather than risk a stuck indicator")
+            self.releaseWarmHold()
+        }
     }
 }

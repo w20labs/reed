@@ -71,7 +71,7 @@ extension AudioRecorder {
     /// a guess about one.
     func startEngineRecoveringFormatMismatch() throws {
         do {
-            try engine.start()
+            try startEngineCatchingExceptions()
         } catch let error as NSError where error.code == -10868 {
             DebugTimings.persist("MIC start -10868 — rebuilding and retrying once")
             rebuildEngineForDeviceChange()
@@ -112,7 +112,7 @@ extension AudioRecorder {
             }
             tapInstalled = true
             do {
-                try engine.start()
+                try startEngineCatchingExceptions()
                 DebugTimings.persist(String(format: "MIC recovered at rate=%.0f", format.sampleRate))
             } catch {
                 DebugTimings.persist("MIC recovery failed: \((error as NSError).code)")
@@ -263,23 +263,6 @@ extension AudioRecorder {
 // Moved out of AudioRecorder.swift for the swiftlint file-length cap (same
 // pattern as this file itself).
 extension AudioRecorder {
-    enum RecorderError: LocalizedError {
-        case micDenied
-        case converterFailed
-        case noInput
-        case deviceFormatMismatch
-
-        var errorDescription: String? {
-            switch self {
-            case .deviceFormatMismatch:
-                return "The selected microphone couldn't be started at its own format"
-            case .micDenied: return "Microphone permission denied"
-            case .converterFailed: return "Failed to create audio converter"
-            case .noInput: return "No audio input device available"
-            }
-        }
-    }
-
     // Pre-warm: install tap + briefly start/stop the engine so the audio
     // subsystem (driver, format negotiation, AU graph) is warm. Mic indicator
     // turns off as soon as we stop the engine. Subsequent start() calls are
@@ -321,26 +304,28 @@ extension AudioRecorder {
             if attempt > 0 {
                 alog.info("engine replaced mid-prewarm — restarting on the fresh engine (attempt \(attempt + 1))")
             }
-            let engineAtStart = engine
-            // Accessing inputNode instantiates the input unit and prepare()
-            // initializes it — both required before the unit can be pinned.
-            _ = engine.inputNode
-            engine.prepare()
-            let pinnedDeviceID = pinPreferredInputIfSet()
+            // Each segment between awaits holds the engine gate: a check of
+            // `engineAtStart` is only true for as long as nothing else can
+            // replace the engine (see EngineGate).
+            let (engineAtStart, pinnedDeviceID) = engineGate.hold {
+                // Accessing inputNode instantiates the input unit and prepare()
+                // initializes it — both required before the unit can be pinned.
+                _ = engine.inputNode
+                engine.prepare()
+                return (engine, pinPreferredInputIfSet())
+            }
             if pinnedDeviceID != nil {
                 // Wait out the pin's config-change echo BEFORE the tap
                 // exists — it lands as a harmless absorb instead of orphaning
                 // the tap (observed at 116-133 ms; see pinEchoSettleNs).
                 try? await Task.sleep(nanoseconds: Self.pinEchoSettleNs)
-                guard engine === engineAtStart else { continue }
             }
-            let input = engine.inputNode
+            guard let input = engineGate.hold({ engine === engineAtStart ? engine.inputNode : nil }) else { continue }
 
             // Usability only — no prediction about what the device will
             // accept. engine.start() is the authority; -10868 is recovered
             // from below.
             let inputFormat = try await usableInputFormat(input)
-            guard engine === engineAtStart else { continue }
             alog.info("input format: \(inputFormat)")
 
             // THE pin fix: the input node inherits its format from the
@@ -359,30 +344,34 @@ extension AudioRecorder {
                     AVAudioFormat(standardFormatWithSampleRate: $0, channels: 1)
                 }
             }
-            let exception = ObjCExceptionCatcher.catchException {
-                input.removeTap(onBus: 0)
-                input.installTap(onBus: 0, bufferSize: 4096, format: tapFormat) { [weak self] buffer, _ in
-                    self?.processTapBuffer(buffer)
+            let finished = try engineGate.hold {
+                guard engine === engineAtStart else { return false }
+                let exception = ObjCExceptionCatcher.catchException {
+                    input.removeTap(onBus: 0)
+                    input.installTap(onBus: 0, bufferSize: 4096, format: tapFormat) { [weak self] buffer, _ in
+                        self?.processTapBuffer(buffer)
+                    }
                 }
-            }
-            if let exception {
-                alog.error("installTap raised \(exception.name.rawValue): \(exception.reason ?? "<no reason>") — rebuilding and retrying")
-                rebuildEngineForDeviceChange()
-                continue
-            }
-            tapInstalled = true
+                if let exception {
+                    alog.error("installTap raised \(exception.name.rawValue): \(exception.reason ?? "<no reason>") — rebuilding and retrying")
+                    rebuildEngineForDeviceChange()
+                    return false
+                }
+                tapInstalled = true
 
-            engine.prepare()
-            try startEngineRecoveringFormatMismatch()
-            if keepRunning {
+                engine.prepare()
+                try startEngineRecoveringFormatMismatch()
+                if keepRunning {
+                    isPrewarmed = true
+                    alog.info("engine pre-warmed (left running for a warm hold)")
+                    return true
+                }
+                engine.stop()         // release mic so indicator stays off when idle
                 isPrewarmed = true
-                alog.info("engine pre-warmed (left running for a warm hold)")
-                return
+                alog.info("engine pre-warmed (stopped, caches warm)")
+                return true
             }
-            engine.stop()         // release mic so indicator stays off when idle
-            isPrewarmed = true
-            alog.info("engine pre-warmed (stopped, caches warm)")
-            return
+            if finished { return }
         }
         alog.error("prewarm gave up after 3 engine replacements")
         throw RecorderError.noInput

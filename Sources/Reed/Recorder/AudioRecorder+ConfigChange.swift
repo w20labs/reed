@@ -29,7 +29,11 @@ extension AudioRecorder {
     /// re-using the old engine across a device switch is not safe.
     /// Rebuild so the input node is instantiated against the current device.
     func rebuildEngineForDeviceChange() { invalidate() }
-    func invalidate() {
+    /// Through the engine gate: from main while a start or prewarm holds the
+    /// engine, the replacement waits for that segment to let go.
+    func invalidate() { engineGate.mutate { self.replaceEngine() } }
+
+    private func replaceEngine() {
         // Block-based observers are removed by token; removeObserver(self)
         // silently did nothing here and leaked one registration per rebuild.
         if let configChangeObserver {

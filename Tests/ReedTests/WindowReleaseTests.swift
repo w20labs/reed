@@ -24,10 +24,15 @@ final class WindowReleaseTests: XCTestCase {
         super.tearDown()
     }
 
-    /// Closes `window` and lets the deferred content release run.
+    /// Closes `window` and runs the main loop until the deferred content
+    /// release has run. A fixed 0.1 s settle failed on a slow CI runner
+    /// (2026-10-12): the release is a main-queue hop, not a deadline.
     private func closeAndSettle(_ window: NSWindow?) {
         window?.close()
-        RunLoop.main.run(until: Date().addingTimeInterval(0.1))
+        let deadline = Date().addingTimeInterval(5)
+        while window?.contentView != nil, Date() < deadline {
+            RunLoop.main.run(until: Date().addingTimeInterval(0.01))
+        }
     }
 
     func testClosingSetupReleasesTheWindowAndItsContent() {

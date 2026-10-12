@@ -53,6 +53,10 @@ struct DictationError: Equatable {
                 return .init(headline: "No microphone found",
                              detail: "No audio input device is available. Connect a mic and try again.",
                              action: .none, raw: raw, severity: .actionable)
+            case .engineReplaced, .engineStartRaised:
+                return .init(headline: "Microphone didn't start",
+                             detail: "Your audio devices changed as Reed started listening. Try again.",
+                             action: .none, raw: raw, severity: .actionable)
             case .converterFailed:
                 return .init(headline: "Audio setup failed",
                              detail: "Reed couldn't start the audio converter. Try again.",

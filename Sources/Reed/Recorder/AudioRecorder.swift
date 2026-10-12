@@ -114,7 +114,7 @@ final class AudioRecorder {
     /// When the hotkey went down, as opposed to when the recorder was reached.
     private(set) var warmPressedAt: Date?
     /// When `engine.start()` returned (a Bluetooth link may still be silent).
-    private(set) var warmEngineStartedAt: Date?
+    var warmEngineStartedAt: Date?
     /// First tap callback of this recording: proves the tap is installed, not
     /// that the device can hear. Internal, not `private(set)`: written from
     /// the +Warmup extension, which lives in another file (file_length).
@@ -126,6 +126,11 @@ final class AudioRecorder {
     var warmSampleRate: Double = 0
     /// Pending release of a held-warm stream; non-nil exactly while holding.
     var keepWarmReleaseTask: Task<Void, Never>?
+    /// The hold's idle timeout; `keepWarmIdleTimeout` except in tests.
+    var keepWarmIdle = AudioRecorder.keepWarmIdleTimeout
+    /// Which hold is live: bumped each time one is armed, so a release
+    /// queued for an earlier hold cannot take a later one.
+    var warmHoldGeneration = 0
     /// Served from a held-warm stream — see `requiredLoudBuffers`.
     var resumedFromWarmHold = false
     /// Bound input is Bluetooth — resolved once at `start()`, never in the tap
@@ -135,6 +140,10 @@ final class AudioRecorder {
     /// Set by the Coordinator, which already resolves the device — enumerating
     /// CoreAudio inside `stop()` would put that work on the release path.
     var shouldHoldWarm = false
+    /// Serializes engine replacement against start/prewarm (+EngineGate).
+    let engineGate = EngineGate()
+    /// Runs between prewarm's return and arming capture; tests only.
+    var afterPrewarmForTesting: (() -> Void)?
 
     init() {
         observeConfigChange()
@@ -144,7 +153,7 @@ final class AudioRecorder {
 
     /// Subscribe to AVAudioEngineConfigurationChange for the *current* engine
     /// instance. Must be re-called after `invalidate()` replaces the engine.
-    /// Marshalled onto main so it can't race with hotkey-triggered prewarm.
+    /// Delivered on main; the engine gate orders it against start/prewarm.
     func observeConfigChange() {
         if let configChangeObserver {
             NotificationCenter.default.removeObserver(configChangeObserver)
@@ -153,27 +162,37 @@ final class AudioRecorder {
             forName: .AVAudioEngineConfigurationChange,
             object: engine,
             queue: .main
-        ) { [weak self] _ in
-            guard let self else { return }
-            let capturing = self.bufferQueue.sync { self.isCapturing }
-            let msSincePin = self.selfInflictedPinAt.map { Date().timeIntervalSince($0) * 1_000 }
-            // The stamp AGES OUT rather than being consumed: a device switch
-            // can emit two notifications, and consuming the stamp on the
-            // first sent the second into `invalidate` — which replaced the
-            // engine mid-settle and crashed prewarm's installTap on the old
-            // node (crash report 2026-08-05-1151, SIGABRT in InstallTapOnNode).
-            switch Self.configChangeAction(
-                capturing: capturing, tapLive: self.tapInstalled, msSincePin: msSincePin) {
-            case .absorb:
-                alog.info("AVAudioEngine config change from our own device pin (\(Int(msSincePin ?? 0))ms ago, idle) — absorbing")
-            case .interruptCapture:
-                alog.error("AVAudioEngine config change stopped the engine mid-capture — invalidating and signaling recovery")
-                self.invalidate()
-                if let cb = self.onCaptureInterrupted { DispatchQueue.main.async(execute: cb) }
-            case .invalidate:
-                alog.info("AVAudioEngine config change — invalidating prewarm")
-                self.invalidate()
+        ) { [weak self] note in
+            // Decided when the gate lets the handler run, which may be after
+            // the start that held it has armed capture — or replaced the
+            // engine this notification is about.
+            let source = note.object as AnyObject?
+            self?.engineGate.mutate { [weak self] in
+                guard let self, source === self.engine else { return }
+                self.handleConfigChange()
             }
+        }
+    }
+
+    private func handleConfigChange() {
+        let capturing = self.bufferQueue.sync { self.isCapturing }
+        let msSincePin = self.selfInflictedPinAt.map { Date().timeIntervalSince($0) * 1_000 }
+        // The stamp AGES OUT rather than being consumed: a device switch
+        // can emit two notifications, and consuming the stamp on the
+        // first sent the second into `invalidate` — which replaced the
+        // engine mid-settle and crashed prewarm's installTap on the old
+        // node (crash report 2026-08-05-1151, SIGABRT in InstallTapOnNode).
+        switch Self.configChangeAction(
+            capturing: capturing, tapLive: self.tapInstalled, msSincePin: msSincePin) {
+        case .absorb:
+            alog.info("AVAudioEngine config change from our own device pin (\(Int(msSincePin ?? 0))ms ago, idle) — absorbing")
+        case .interruptCapture:
+            alog.error("AVAudioEngine config change stopped the engine mid-capture — invalidating and signaling recovery")
+            self.invalidate()
+            if let cb = self.onCaptureInterrupted { DispatchQueue.main.async(execute: cb) }
+        case .invalidate:
+            alog.info("AVAudioEngine config change — invalidating prewarm")
+            self.invalidate()
         }
     }
 
@@ -259,56 +278,9 @@ final class AudioRecorder {
             if !isPrewarmed {
                 try await prewarm()
             }
-            // All flag mutations go through bufferQueue so they're serialized
-            // with the tap callback (which also touches them on bufferQueue).
-            // Without this, capturedAnyFrame can appear stale to the tap and
-            // onCaptureReady silently never fires for this recording.
-            bufferQueue.sync {
-                pcmBuffer = Data()
-                inputPeak = 0
-                droppedOverflow = false
-                capturedAnyFrame = false
-                consecutiveLoudBuffers = 0
-                reportedRealSignal = false
-                recordingArmedAt = Date()
-                // Fresh meter calibration per recording — the last session's
-                // speech reference and noise floor must not carry into a new
-                // environment.
-                meterReferenceDB = Self.meterNoiseFloorMinDB
-                meterNoiseFloorDB = 0.0
-                segmenter = SpeechSegmenter()
-            }
-            // A held-warm stream is already running and muted: unmuting is the
-            // whole of the work, and skips the ~1700 ms profile switch.
-            resumedFromWarmHold = resumeFromWarmHold()
-            if !resumedFromWarmHold {
-                // Defensive unmute (race finding, 2026-08-25): this start()
-                // can JOIN beginWarmHold's in-flight MUTED prewarm before its
-                // hold is armed — capture would then record HAL silence for
-                // the whole dictation. No-op when not muted.
-                _ = ProcessAudio.setInputMuted(false)
-                if !engine.isRunning {
-                    // (Pin freshness is handled above by forcing the prewarm
-                    // rebuild; see the comment on the invalidate.)
-                    try engine.start()
-                }
-            }
-            capturingFromBluetooth = boundInputDeviceID.map(AudioInputDevice.isBluetooth) ?? true
-            warmEngineStartedAt = Date()
-            // Debug hook: with REED_DEBUG_NO_CAPTURE=1 we start the engine but
-            // never arm capture, so the tap discards every frame and
-            // onCaptureReady never fires — exactly the "audio never started"
-            // failure the Coordinator's warming watchdog exists to catch. Lets
-            // us deterministically exercise that path without a real device
-            // glitch. Off by default.
-            let suppressCapture = ProcessInfo.processInfo.environment["REED_DEBUG_NO_CAPTURE"] == "1"
-            bufferQueue.sync { isCapturing = !suppressCapture }
-            if suppressCapture {
-                alog.error("REED_DEBUG_NO_CAPTURE=1 — capture suppressed (warming-watchdog test)")
-            } else {
-                alog.info("capture armed from \(self.boundInputDescription) "
-                    + "(isCapturing=true, capturedAnyFrame=false)")
-            }
+            // Test seam: the gap where the 2026-10-11 crash's replacement landed.
+            afterPrewarmForTesting?()
+            try engineGate.hold { try armCapture() }
         } catch {
             alog.error("start failed: \(error.localizedDescription) — invalidating")
             invalidate()
@@ -329,7 +301,13 @@ final class AudioRecorder {
         // HAL-muted on Bluetooth, which turns the indicator off just as
         // reliably while keeping the link in its call profile — see
         // AudioRecorder+KeepWarm. Anything else stops exactly as before.
-        holdWarmOrStop(shouldHold: shouldHoldWarm)
+        // Gated: a stop queued behind a segment must not stop the capture a
+        // newer start armed meanwhile.
+        let hold = shouldHoldWarm
+        engineGate.mutate { [weak self] in
+            guard let self, !self.bufferQueue.sync(execute: { self.isCapturing }) else { return }
+            self.holdWarmOrStop(shouldHold: hold)
+        }
 
         return bufferQueue.sync {
             let pcm = pcmBuffer

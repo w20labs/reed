@@ -126,6 +126,8 @@ final class AudioRecorder {
     var warmSampleRate: Double = 0
     /// Pending release of a held-warm stream; non-nil exactly while holding.
     var keepWarmReleaseTask: Task<Void, Never>?
+    /// The hold's idle timeout; `keepWarmIdleTimeout` except in tests.
+    var keepWarmIdle = AudioRecorder.keepWarmIdleTimeout
     /// Served from a held-warm stream — see `requiredLoudBuffers`.
     var resumedFromWarmHold = false
     /// Bound input is Bluetooth — resolved once at `start()`, never in the tap

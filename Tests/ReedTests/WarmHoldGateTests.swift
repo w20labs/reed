@@ -82,6 +82,7 @@ final class WarmHoldGateTests: XCTestCase {
 
     func testDeferredDefaultChangeDoesNotStopColdFallbackCapture() throws {
         guard AudioRecorder.hasAudioInput() else { throw XCTSkip("needs an input node; no real engine is started") }
+        try skipIfDefaultInputIsBluetooth()
         let recorder = AudioRecorder()
         let engine = ControlledEngine()
         recorder.engine = engine
@@ -120,6 +121,7 @@ final class WarmHoldGateTests: XCTestCase {
     @MainActor
     func testDeferredIdleTimeoutDoesNotStopColdFallbackCapture() async throws {
         guard AudioRecorder.hasAudioInput() else { throw XCTSkip("needs an input node; no real engine is started") }
+        try skipIfDefaultInputIsBluetooth()
         let recorder = AudioRecorder()
         let engine = ControlledEngine()
         recorder.engine = engine
@@ -168,5 +170,71 @@ final class WarmHoldGateTests: XCTestCase {
         XCTAssertFalse(recorder.isWarm, "a stale hold made a cold start read as warm")
         XCTAssertFalse(recorder.resumeFromWarmHold())
         XCTAssertFalse(recorder.isHoldingWarm, "the cold fallback kept the obsolete hold")
+    }
+
+    @MainActor
+    func testCancelledTimeoutCannotReleaseTheNextIdleHold() async throws {
+        let recorder = AudioRecorder()
+        let engine = ControlledEngine()
+        recorder.engine = engine
+        recorder.shouldHoldWarm = true
+        recorder.keepWarmIdle = 0.02
+        try engine.start()
+        XCTAssertTrue(recorder.holdWarmOrStop(shouldHold: true))
+        let oldTimer = try XCTUnwrap(recorder.keepWarmReleaseTask)
+        let entered = DispatchSemaphore(value: 0)
+        let resume = DispatchSemaphore(value: 0)
+        let resumed = DispatchSemaphore(value: 0)
+        let finish = DispatchSemaphore(value: 0)
+        let done = DispatchSemaphore(value: 0)
+        DispatchQueue.global().async {
+            recorder.engineGate.hold {
+                entered.signal()
+                resume.wait()
+                XCTAssertTrue(recorder.resumeFromWarmHold())
+                recorder.bufferQueue.sync { recorder.isCapturing = true }
+                resumed.signal()
+                finish.wait()
+            }
+            done.signal()
+        }
+        XCTAssertEqual(entered.wait(timeout: .now() + 5), .success)
+        // Main stays occupied while A's timeout wakes and awaits MainActor.run.
+        // Its cancellation check has passed, but it cannot yet enqueue a mutation.
+        Thread.sleep(forTimeInterval: 0.1)
+        resume.signal()
+        XCTAssertEqual(resumed.wait(timeout: .now() + 5), .success)
+        XCTAssertTrue(oldTimer.isCancelled)
+        // B ends while its start segment still owns the gate. Its deferred
+        // stop will create a fresh ten-minute hold, ahead of A's old release.
+        recorder.keepWarmIdle = 600
+        _ = recorder.stop()
+        await oldTimer.value
+        finish.signal()
+        XCTAssertEqual(done.wait(timeout: .now() + 5), .success)
+        XCTAssertTrue(engine.isRunning, "A's cancelled timeout stopped B's new idle hold")
+        XCTAssertTrue(recorder.isHoldingWarm, "the new idle hold was released before its own deadline")
+        XCTAssertEqual(engine.stopCount, 0)
+        recorder.releaseWarmHold()
+    }
+
+    /// Sibling of the timer: a device change queued behind a press is about
+    /// the hold live when it happened, not one that press arms on release.
+    func testQueuedDeviceChangeCannotReleaseTheNextIdleHold() throws {
+        let recorder = AudioRecorder()
+        let engine = ControlledEngine()
+        recorder.engine = engine
+        try engine.start()
+        XCTAssertTrue(recorder.holdWarmOrStop(shouldHold: true))
+        let held = backgroundHold(recorder) {
+            XCTAssertTrue(recorder.resumeFromWarmHold())
+            // The press ends inside the segment and holds warm again.
+            XCTAssertTrue(recorder.holdWarmOrStop(shouldHold: true))
+        }
+        recorder.handleDefaultDeviceChanged()
+        held.release(); held.finish()
+        XCTAssertTrue(engine.isRunning, "a device change queued for the old hold released the new one")
+        XCTAssertTrue(recorder.isHoldingWarm)
+        recorder.releaseWarmHold()
     }
 }

@@ -85,7 +85,9 @@ final class EngineGateTests: XCTestCase {
     /// replaced from main before capture is armed. Refused with a catchable
     /// error, never started.
     @MainActor
-    func testEngineReplacedAfterPrewarmIsRefusedNotStarted() async {
+    func testEngineReplacedAfterPrewarmIsRefusedNotStarted() async throws {
+        // invalidate() with isPrewarmed set touches the real input node.
+        try skipIfDefaultInputIsBluetooth()
         let recorder = AudioRecorder()
         recorder.isPrewarmed = true
         recorder.afterPrewarmForTesting = {

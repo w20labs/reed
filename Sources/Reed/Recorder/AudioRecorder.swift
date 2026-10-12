@@ -128,6 +128,9 @@ final class AudioRecorder {
     var keepWarmReleaseTask: Task<Void, Never>?
     /// The hold's idle timeout; `keepWarmIdleTimeout` except in tests.
     var keepWarmIdle = AudioRecorder.keepWarmIdleTimeout
+    /// Which hold is live: bumped each time one is armed, so a release
+    /// queued for an earlier hold cannot take a later one.
+    var warmHoldGeneration = 0
     /// Served from a held-warm stream — see `requiredLoudBuffers`.
     var resumedFromWarmHold = false
     /// Bound input is Bluetooth — resolved once at `start()`, never in the tap

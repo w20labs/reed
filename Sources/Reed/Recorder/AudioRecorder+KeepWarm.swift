@@ -119,14 +119,17 @@ extension AudioRecorder {
     /// pre-warm) — one policy, one implementation.
     private func armWarmHoldRelease() {
         keepWarmReleaseTask?.cancel()
+        warmHoldGeneration &+= 1
+        let hold = warmHoldGeneration
         keepWarmReleaseTask = Task { [weak self] in
             try? await Task.sleep(nanoseconds: UInt64((self?.keepWarmIdle ?? 0) * 1_000_000_000))
             guard !Task.isCancelled else { return }
             await MainActor.run {
                 // Through the engine gate, re-checked when it runs: a start
-                // holding the gate may resume this hold first.
+                // holding the gate may resume this hold first, and end with a
+                // new one this timer must not release (review 2026-10-12).
                 self?.engineGate.mutate { [weak self] in
-                    guard self?.releaseIdleHold() == true else { return }
+                    guard self?.releaseIdleHold(hold) == true else { return }
                     klog.info("keep-warm idle timeout — released the device")
                 }
             }
@@ -220,17 +223,23 @@ extension AudioRecorder {
     /// Internal for tests (the HAL listener is its only production caller).
     func handleDefaultDeviceChanged() {
         // Gated like the idle timeout: a start mid-resume owns the engine.
+        // The change is about the hold live NOW; one armed after it, by a
+        // press the gate let finish first, is on the new device already.
+        guard isHoldingWarm else { return }
+        let hold = warmHoldGeneration
         engineGate.mutate { [weak self] in
-            guard self?.releaseIdleHold() == true else { return }
+            guard self?.releaseIdleHold(hold) == true else { return }
             klog.error("default device changed while holding warm — released rather than risk a stuck indicator")
         }
     }
 
-    /// Release the hold only while it is idle: a hold is not proof that no
-    /// capture is using the engine (a stale one survives a cold start), so
-    /// `isCapturing` decides. Both deferred releases come through here.
-    private func releaseIdleHold() -> Bool {
-        guard isHoldingWarm, !bufferQueue.sync(execute: { isCapturing }) else { return false }
+    /// Release hold `hold` only while it is the live one and idle: a hold is
+    /// not proof that no capture is using the engine (a stale one survives a
+    /// cold start), so `isCapturing` decides; and a release queued for one
+    /// hold must never take the next. Both deferred releases come through here.
+    private func releaseIdleHold(_ hold: Int) -> Bool {
+        guard isHoldingWarm, hold == warmHoldGeneration,
+              !bufferQueue.sync(execute: { isCapturing }) else { return false }
         releaseWarmHold()
         return true
     }

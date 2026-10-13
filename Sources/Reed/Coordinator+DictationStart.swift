@@ -143,7 +143,7 @@ extension Coordinator {
         micIsPreparing = currentMicIsBluetooth || !recorder.isWarm
         state = .warming
         if lockOnStart { handsFree = true }
-        startWarmingWatchdog()
+        startWarmingWatchdog(forStart: true)
         // Every press finishes at the five-minute limit (P17); a hold
         // rarely gets there, hands-free easily does.
         armRecordingLimit(generation: generation)
@@ -155,9 +155,14 @@ extension Coordinator {
     /// recorder.stop() runs before capture is armed and tears nothing down,
     /// so without the check the mic stays live (indicator on) with the
     /// coordinator idle, and the next release pastes ambient room audio.
-    private func startRecorder(generation: Int) async {
+    func startRecorder(generation: Int) async {
         do {
-            try await recorder.start(pressedAt: self.holdStartedAt ?? Date())
+            try await startMic()
+            if generation == pressGeneration, case .warming = state {
+                // The mic is up: the first-frames budget starts now, not at
+                // the press — a slow cold start is not a dead mic.
+                startWarmingWatchdog()
+            }
             if generation != pressGeneration {
                 // Rapid re-press (review 2026-08-25): a NEWER press may
                 // already own the capture on the shared engine — stopping
@@ -183,6 +188,13 @@ extension Coordinator {
             activeError = dictationError
             state = .error(dictationError.headline)
         }
+    }
+
+    /// `recorder.start`, or the test stand-in for it.
+    func startMic() async throws {
+        let pressedAt = holdStartedAt ?? Date()
+        if let fake = recorderStartForTesting { return try await fake(pressedAt) }
+        try await recorder.start(pressedAt: pressedAt)
     }
 
     /// Whether an unfinished setup must take the hotkey instead of dictation:

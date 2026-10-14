@@ -173,9 +173,7 @@ extension Coordinator {
             endReview()
             return
         }
-        lastTranscript = text
-        state = .injecting
-        let receipt = injector.inject(text)
+        let receipt = injectAndRecord(text)
         let totalSeconds = Date().timeIntervalSince(context.releaseAt)
         let counts = deliverReview(injection: receipt, timings: .init(totalSeconds: totalSeconds, tailSeconds: tailSeconds,
                                                                      outstandingSeconds: outstandingSeconds), audio: wav)

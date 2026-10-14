@@ -10,6 +10,7 @@ struct RecentDictationsCard: View {
     let onClear: () -> Void
     var rowWidthForTesting: ((CGFloat) -> Void)?
     var copyReadyForTesting: ((RecentDictationsCard) -> Void)?
+    var copyButtonWidthForTesting: ((CGFloat) -> Void)?
     /// The entry whose Copy just fired: it shows "Copied" for 1.6 s.
     @State var copiedID: UUID?
     /// Which Copy is the latest: a timer clears the feedback only if no later
@@ -47,9 +48,11 @@ struct RecentDictationsCard: View {
 
             VStack(alignment: .leading, spacing: 4) {
                 HStack {
+                    // Copy keeps its full width; the label truncates instead.
                     metaLabel(newest, now: now)
-                    Spacer()
+                    Spacer(minLength: 8)
                     copyButton(newest)
+                        .fixedSize()
                 }
                 Text(newest.text)
                     .font(ReedFont.ui(12))
@@ -97,12 +100,15 @@ struct RecentDictationsCard: View {
         .buttonStyle(.plain)
         .onHover { hoveredID = $0 ? entry.id : nil }
         .help("Copy the transcript - handy if it didn't paste at your cursor")
+        .background(GeometryReader { proxy in
+            Color.clear.onAppear { copyButtonWidthForTesting?(proxy.size.width) }
+        })
     }
 
     private func earlierRow(_ entry: RecentDictation, now: Date) -> some View {
         let copied = copiedID == entry.id
         return Button { copy(entry) } label: {
-            HStack(spacing: 10) {
+            PreviewThenLabel(minPreview: Self.minPreviewWidth, spacing: 10) {
                 Text(entry.text)
                     .font(ReedFont.ui(12))
                     .foregroundStyle(.primary)
@@ -133,16 +139,29 @@ struct RecentDictationsCard: View {
         .padding(.horizontal, -8)
         .onHover { hoveredID = $0 ? entry.id : nil }
         .help("Copy this dictation")
+        .accessibilityLabel("\(entry.text), \(RecentDictations.label(entry, now: now))")
     }
 
-    /// The age and target app, at its natural width: `label` already
-    /// shortens a long app name, so the preview keeps the rest of the row.
+    /// An earlier row's preview never gets less than this, whatever the
+    /// app's name is made of (review 2026-10-14: 16 CJK characters left it
+    /// 1.5 pt; a character limit does not bound rendered width).
+    static let minPreviewWidth: CGFloat = 110
+
+    /// "4 min · Slack": the age always whole; the app name truncates to
+    /// whatever width the row leaves it.
     private func metaLabel(_ entry: RecentDictation, now: Date) -> some View {
-        Text(RecentDictations.label(entry, now: now))
-            .font(ReedFont.ui(11))
-            .foregroundStyle(.secondary)
-            .lineLimit(1)
-            .fixedSize()
+        HStack(spacing: 0) {
+            Text(RecentDictations.age(of: entry.date, now: now))
+                .fixedSize()
+            if let app = entry.appName {
+                Text(" · \(app)")
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+            }
+        }
+        .font(ReedFont.ui(11))
+        .foregroundStyle(.secondary)
+        .accessibilityElement(children: .combine)
     }
 
     func copy(_ entry: RecentDictation) {
@@ -155,5 +174,32 @@ struct RecentDictationsCard: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) {
             if copyGeneration == generation { copiedID = nil }
         }
+    }
+}
+
+/// An earlier row: the preview (first subview) and the label (second). The
+/// label gets its natural width, but never so much that the preview drops
+/// below `minPreview`; the preview takes the rest. A short label leaves the
+/// preview the whole row, a long one truncates instead of crowding it out.
+private struct PreviewThenLabel: Layout {
+    let minPreview: CGFloat
+    let spacing: CGFloat
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let sizes = subviews.map { $0.sizeThatFits(.unspecified) }
+        let height = sizes.map(\.height).max() ?? 0
+        let width = proposal.width ?? sizes.map(\.width).reduce(spacing, +)
+        return CGSize(width: width, height: height)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        guard subviews.count == 2 else { return }
+        let labelIdeal = subviews[1].sizeThatFits(.unspecified).width
+        let labelWidth = min(labelIdeal, max(0, bounds.width - minPreview - spacing))
+        let previewWidth = max(0, bounds.width - labelWidth - spacing)
+        subviews[0].place(at: CGPoint(x: bounds.minX, y: bounds.midY), anchor: .leading,
+                          proposal: ProposedViewSize(width: previewWidth, height: bounds.height))
+        subviews[1].place(at: CGPoint(x: bounds.maxX, y: bounds.midY), anchor: .trailing,
+                          proposal: ProposedViewSize(width: labelWidth, height: bounds.height))
     }
 }

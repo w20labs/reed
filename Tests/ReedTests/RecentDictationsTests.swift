@@ -49,18 +49,13 @@ final class RecentDictationsTests: XCTestCase {
         XCTAssertEqual(RecentDictations.age(of: now.addingTimeInterval(120), now: now), "just now")
     }
 
-    func testLabelShowsTheAppWhenKnownAndShortensALongName() {
+    func testLabelShowsTheAppWhenKnownAndTimeOnlyOtherwise() {
         let now = Date()
         var recent = RecentDictations()
         recent.record("a", appName: "Visual Studio Code - Insiders", at: now.addingTimeInterval(-240))
-        recent.record("b", appName: "Slack", at: now.addingTimeInterval(-60))
-        recent.record("c", appName: nil, at: now)
-        XCTAssertEqual(RecentDictations.label(recent.entries[2], now: now), "4 min · Visual Studio C…")
-        XCTAssertEqual(RecentDictations.label(recent.entries[1], now: now), "1 min · Slack")
+        recent.record("b", appName: nil, at: now)
+        XCTAssertEqual(RecentDictations.label(recent.entries[1], now: now), "4 min · Visual Studio Code - Insiders")
         XCTAssertEqual(RecentDictations.label(recent.entries[0], now: now), "just now")
-        // Exactly at the limit is kept whole.
-        recent.record("d", appName: String(repeating: "x", count: RecentDictations.appNameLimit), at: now)
-        XCTAssertEqual(RecentDictations.label(recent.entries[0], now: now), "just now · " + String(repeating: "x", count: 16))
     }
 
     func testAppNameResolvesARunningAppAndNothingForNoTarget() {

@@ -8,8 +8,13 @@ import SwiftUI
 struct RecentDictationsCard: View {
     let dictations: RecentDictations
     let onClear: () -> Void
+    var rowWidthForTesting: ((CGFloat) -> Void)?
+    var copyReadyForTesting: ((RecentDictationsCard) -> Void)?
     /// The entry whose Copy just fired: it shows "Copied" for 1.6 s.
-    @State private var copiedID: UUID?
+    @State var copiedID: UUID?
+    /// Which Copy is the latest: a timer clears the feedback only if no later
+    /// Copy (of any entry, or the same one again) has fired since its own.
+    @State private var copyGeneration = 0
     @State private var hoveredID: UUID?
 
     var body: some View {
@@ -17,6 +22,7 @@ struct RecentDictationsCard: View {
             // Ages are re-read every 30 s while the menu is open.
             TimelineView(.periodic(from: .now, by: 30)) { context in
                 card(newest: newest, now: context.date)
+                    .onAppear { copyReadyForTesting?(self) }
             }
         }
     }
@@ -36,15 +42,12 @@ struct RecentDictationsCard: View {
                         .foregroundStyle(.secondary)
                 }
                 .buttonStyle(.plain)
-                .help("Forget these dictations now. Reed never saves them to disk.")
+                .help("Clear this list")
             }
 
             VStack(alignment: .leading, spacing: 4) {
                 HStack {
-                    Text(RecentDictations.meta(newest, now: now))
-                        .font(ReedFont.ui(11))
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
+                    metaLabel(newest, now: now)
                     Spacer()
                     copyButton(newest)
                 }
@@ -106,17 +109,16 @@ struct RecentDictationsCard: View {
                     .lineLimit(1)
                     .truncationMode(.tail)
                     .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(GeometryReader { proxy in
+                        Color.clear.onAppear { rowWidthForTesting?(proxy.size.width) }
+                    })
                 if copied {
                     Label("Copied", systemImage: "checkmark")
                         .labelStyle(.titleAndIcon)
                         .font(ReedFont.ui(11, 500))
                         .foregroundStyle(.secondary)
                 } else {
-                    Text(RecentDictations.meta(entry, now: now))
-                        .font(ReedFont.ui(11))
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                        .fixedSize()
+                    metaLabel(entry, now: now)
                 }
             }
             .padding(.horizontal, 8)
@@ -133,13 +135,25 @@ struct RecentDictationsCard: View {
         .help("Copy this dictation")
     }
 
-    private func copy(_ entry: RecentDictation) {
+    /// The age and target app, at its natural width: `label` already
+    /// shortens a long app name, so the preview keeps the rest of the row.
+    private func metaLabel(_ entry: RecentDictation, now: Date) -> some View {
+        Text(RecentDictations.label(entry, now: now))
+            .font(ReedFont.ui(11))
+            .foregroundStyle(.secondary)
+            .lineLimit(1)
+            .fixedSize()
+    }
+
+    func copy(_ entry: RecentDictation) {
         let pasteboard = NSPasteboard.general
         pasteboard.clearContents()
         pasteboard.setString(entry.text, forType: .string)
         copiedID = entry.id
+        copyGeneration += 1
+        let generation = copyGeneration
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) {
-            if copiedID == entry.id { copiedID = nil }
+            if copyGeneration == generation { copiedID = nil }
         }
     }
 }

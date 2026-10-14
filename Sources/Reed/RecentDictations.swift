@@ -45,11 +45,17 @@ struct RecentDictations: Equatable {
         }
     }
 
-    /// The label under the preview and beside each earlier row.
-    static func meta(_ entry: RecentDictation, now: Date = Date()) -> String {
+    /// App names past this many characters end in "…", so a long name
+    /// ("Visual Studio Code - Insiders") cannot crowd out the preview that
+    /// identifies the entry (review 2026-10-14).
+    static let appNameLimit = 16
+
+    /// "4 min · Slack": the age in full, then the app, shortened if long.
+    static func label(_ entry: RecentDictation, now: Date = Date()) -> String {
         let age = age(of: entry.date, now: now)
         guard let app = entry.appName else { return age }
-        return "\(age) · \(app)"
+        let short = app.count > appNameLimit ? String(app.prefix(appNameLimit - 1)) + "…" : app
+        return "\(age) · \(short)"
     }
 
     /// The display name of the app with `bundleID`: the running copy's name,

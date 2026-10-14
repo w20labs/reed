@@ -30,7 +30,8 @@ final class Coordinator: ObservableObject {
     @Published var handsFree = false
     /// The press is within 30 s of the five-minute limit (amber "30 s left").
     @Published var recordingLimitNear = false
-    @Published var lastTranscript: String = ""
+    /// The menu's recent dictations (P18): the last five, in memory only.
+    @Published var recentDictations = RecentDictations()
     /// Live mic level (0…1) for the HUD meter; 0 when not recording.
     @Published var inputLevel: Float = 0
     /// Debug (design rule ⑩, `reed.debugTimings`): per-stage timing line for the
@@ -149,6 +150,8 @@ final class Coordinator: ObservableObject {
     /// Test seams: shorter budgets, and a stand-in for `recorder.start`.
     var warmingBudgetsForTesting: (start: UInt64, frames: UInt64)?
     var recorderStartForTesting: ((Date) async throws -> Void)?
+    /// Test seam: a stand-in for the real insertion, so tests never type.
+    var injectForTesting: ((String) -> TextInjector.Receipt)?
 
     init() {
         // Not a plain read: drops a pin that names a Bluetooth mic, which

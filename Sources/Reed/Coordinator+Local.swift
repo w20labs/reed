@@ -105,9 +105,7 @@ extension Coordinator {
                 cleanupLabel += " (\(reason))"
             }
             let cleanSeconds = Date().timeIntervalSince(cleanStart)
-            lastTranscript = text
-            state = .injecting
-            let receipt = injector.inject(text)
+            let receipt = injectAndRecord(text)
             // The number the user actually feels: hotkey release → text pasted
             // (stop/flush + load + ASR + cleanup + injection).
             let totalSeconds = Date().timeIntervalSince(context.releaseAt)

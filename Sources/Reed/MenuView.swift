@@ -5,8 +5,6 @@ import SwiftUI
 struct MenuView: View {
     @EnvironmentObject var coordinator: Coordinator
     @EnvironmentObject var updater: Updater
-    @State private var copied = false
-    @State private var copyHovering = false
     /// Cached for the Bluetooth banner — see its `.onAppear`.
     @State private var bluetoothPickerDevices: [AudioInputDevice] = []
 
@@ -52,8 +50,9 @@ struct MenuView: View {
             statusCard
                 .padding(.horizontal, 8)
 
-            if !coordinator.lastTranscript.isEmpty {
-                lastTranscriptCard
+            if coordinator.recentDictations.newest != nil {
+                RecentDictationsCard(dictations: coordinator.recentDictations,
+                                     onClear: { coordinator.recentDictations.clear() })
                     .padding(.horizontal, 8)
                     .padding(.top, 8)
             }
@@ -138,58 +137,6 @@ struct MenuView: View {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .fill(.quaternary.opacity(0.5))
         }
-    }
-
-    private var lastTranscriptCard: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text("LAST DICTATION")
-                    .font(ReedFont.ui(10, 600))
-                    .foregroundStyle(.secondary)
-                    .tracking(0.4)
-                Spacer()
-                Button(action: copyLastTranscript) {
-                    HStack(spacing: 4) {
-                        Image(systemName: copied ? "checkmark" : "doc.on.doc")
-                            .font(.system(size: 10, weight: .semibold))
-                        Text(copied ? "Copied" : "Copy")
-                            .font(ReedFont.ui(11, 500))
-                    }
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .contentShape(RoundedRectangle(cornerRadius: 8))
-                    .background {
-                        RoundedRectangle(cornerRadius: 8, style: .continuous)
-                            .fill(.quaternary.opacity(copyHovering ? 0.7 : 0))
-                    }
-                }
-                .buttonStyle(.plain)
-                .onHover { copyHovering = $0 }
-                .help("Copy the transcript - handy if it didn't paste at your cursor")
-            }
-
-            Text(coordinator.lastTranscript)
-                .font(ReedFont.ui(12))
-                .foregroundStyle(.primary)
-                .lineLimit(3)
-                .truncationMode(.tail)
-                .textSelection(.enabled)
-        }
-        .padding(12)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background {
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(.quaternary.opacity(0.5))
-        }
-    }
-
-    private func copyLastTranscript() {
-        let pb = NSPasteboard.general
-        pb.clearContents()
-        pb.setString(coordinator.lastTranscript, forType: .string)
-        copied = true
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) { copied = false }
     }
 
     /// The error banner's primary action. Settings hosts the microphone and

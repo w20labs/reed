@@ -55,7 +55,7 @@ enum SentenceChunker {
     static func chunks(_ text: String, coalesce: Bool = false, glueFragments: Bool = false) -> [Chunk] {
         var out: [Chunk] = []
         for unit in units(text, coalesce: coalesce, glueFragments: glueFragments) {
-            for (i, piece) in resplitOversized(unit).enumerated() {
+            for (i, piece) in resplit(unit).enumerated() {
                 out.append(Chunk(text: piece, continuesPrevious: i > 0))
             }
         }
@@ -63,23 +63,45 @@ enum SentenceChunker {
     }
 
     static func split(_ text: String, coalesce: Bool = false, glueFragments: Bool = false) -> [String] {
-        units(text, coalesce: coalesce, glueFragments: glueFragments).flatMap(resplitOversized)
+        units(text, coalesce: coalesce, glueFragments: glueFragments).flatMap(resplit)
+    }
+
+    /// A revision pair stays whole: cut at the model-size limit, two re-said
+    /// sentences of up to `SentenceRevision.maxWords` each landed in
+    /// different calls again (review of PR #29). Everything else is resplit.
+    /// Kept whole only up to two of the longest revisable sentences: a cue
+    /// sentence glued after the pair can make it longer still.
+    private static func resplit(_ unit: Unit) -> [String] {
+        unit.isRevision && wordCount(unit.text) <= 2 * SentenceRevision.maxWords ? [unit.text] : resplitOversized(unit.text)
+    }
+
+    /// One unit before the resplit, and whether it is a revision pair.
+    private struct Unit {
+        let text: String
+        let isRevision: Bool
     }
 
     /// Sentences (with corrections and pause-fragments glued, short ones
     /// coalesced) — before the run-on resplit.
-    private static func units(_ text: String, coalesce: Bool, glueFragments: Bool) -> [String] {
+    private static func units(_ text: String, coalesce: Bool, glueFragments: Bool) -> [Unit] {
         let marker = "\u{1F}"
         let sentences = text
             .replacingOccurrences(of: boundary, with: marker, options: .regularExpression)
             .components(separatedBy: marker)
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { !$0.isEmpty }
-        guard sentences.count > 1 else { return sentences }
+        guard sentences.count > 1 else { return sentences.map { Unit(text: $0, isRevision: false) } }
 
         var chunks: [String] = []
+        // A re-said sentence and the one it revises are one call ON THEIR
+        // OWN: coalesced with a neighbour, the model left the pair as
+        // spoken (research P01), while alone it resolves it (U01).
+        var revisions: Set<Int> = []
         for sentence in sentences {
-            if !chunks.isEmpty,
+            if !chunks.isEmpty, SentenceRevision.revises(previous: lastSentence(of: chunks[chunks.count - 1]), next: sentence) {
+                chunks[chunks.count - 1] += " " + sentence
+                revisions.insert(chunks.count - 1)
+            } else if !chunks.isEmpty,
                sentence.range(of: cueOpening, options: .regularExpression) != nil {
                 chunks[chunks.count - 1] += " " + sentence
             } else if glueFragments, let last = chunks.last, endsInNonFinalWord(last),
@@ -98,7 +120,9 @@ enum SentenceChunker {
         // starting fragment) onto the next sentence — and the model, seeing
         // a chunk that opens lowercase, lowercased everything in it, proper
         // nouns included. Only whole sentences may merge; fragments never.
-        return coalesce ? coalesceShort(chunks) : chunks
+        let merged = coalesce ? coalesceShort(chunks, keepingAlone: revisions) : chunks
+        let revised = Set(revisions.map { chunks[$0] })
+        return merged.map { Unit(text: $0, isRevision: revised.contains($0)) }
     }
 
     /// Latency step 1 (2026-08-27, "where the second goes"): every model call
@@ -120,11 +144,16 @@ enum SentenceChunker {
     /// sentence; the merge rule sees chunks, not marks. The word cap keeps a
     /// merged pair under `maxChunkWords`, so coalescing can never produce a
     /// chunk the resplit would then cut back apart.
-    static func coalesceShort(_ pieces: [String]) -> [String] {
+    static func coalesceShort(_ pieces: [String], keepingAlone alone: Set<Int> = []) -> [String] {
         var out: [String] = []
         var groupSentences = 0
-        for piece in pieces {
+        for (index, piece) in pieces.enumerated() {
             let terminated = piece.last.map { ".!?…".contains($0) } ?? false
+            if alone.contains(index) {
+                out.append(piece)
+                groupSentences = coalesceMaxSentences
+                continue
+            }
             if let last = out.last, groupSentences > 0, groupSentences < coalesceMaxSentences,
                terminated, endsWithMark(last),
                last.count + 1 + piece.count <= coalesceMaxChars,
@@ -158,6 +187,10 @@ enum SentenceChunker {
     /// folded) is one no sentence ends in.
     static func endsInNonFinalWord(_ sentence: String) -> Bool {
         let stripped = dropTerminalMark(sentence)
+        // "Scratch that." is a whole correction cue, not a sentence cut off
+        // after "that": gluing it on wrote "Scratch that we will leave…" and
+        // hid the cue from the model (third review of PR #29).
+        if stripped.range(of: #"(?i)\bscratch\s+that$"#, options: .regularExpression) != nil { return false }
         guard let last = stripped.split(whereSeparator: \.isWhitespace).last else { return false }
         let word = last.lowercased().replacingOccurrences(of: "’", with: "'")
             .filter { $0.isLetter || $0 == "'" }
@@ -177,6 +210,20 @@ enum SentenceChunker {
         let isAcronym = word.count > 1 && word.allSatisfy { $0.isUppercase || $0.isNumber || $0.isPunctuation }
         guard !isIForm, !isAcronym, let head = word.first, head.isUppercase else { return text }
         return String(head).lowercased() + text.dropFirst()
+    }
+
+    /// The sentences as marked, before any gluing or coalescing.
+    static func sentences(_ text: String) -> [String] {
+        text.replacingOccurrences(of: boundary, with: "\u{1F}", options: .regularExpression)
+            .components(separatedBy: "\u{1F}")
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+    }
+
+    /// The last sentence of a chunk that may already hold several.
+    private static func lastSentence(of chunk: String) -> String {
+        chunk.replacingOccurrences(of: boundary, with: "\u{1F}", options: .regularExpression)
+            .components(separatedBy: "\u{1F}").last ?? chunk
     }
 
     private static func dropTerminalMark(_ text: String) -> String {

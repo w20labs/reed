@@ -60,6 +60,7 @@ extension Coordinator {
                 out[out.count - 1] = seam.joined
                 onJoin?(index, .restartCollapsed)
             } else if !piece.text.isEmpty, !SentenceChunker.opensWithCorrectionCue(piece.text),
+                      !SentenceRevision.revisesAcrossPause(head: prev, next: piece.text),
                       let mark = verdicts[index] ?? (rules ? SeamRules.verdict(head: prev, next: piece.text) : nil),
                       let joined = SeamRules.apply(mark, head: prev, next: piece.text) {
                 // What the pause was — punctuation and one capital, the
@@ -73,11 +74,13 @@ extension Coordinator {
                 // (cleanup-quality item 2), joined textually like a cap seam.
                 out[out.count - 1] = joinAcrossCut(prev, piece.text, lowercaseFirst: true)
                 onJoin?(index, .gluedBreath)
-            } else if SentenceChunker.opensWithCorrectionCue(piece.text) {
+            } else if SentenceChunker.opensWithCorrectionCue(piece.text)
+                        || SentenceRevision.revisesAcrossPause(head: prev, next: piece.text) {
                 // A spoken correction crossing a pause ("…Bob. [pause] Wait,
-                // no, Alice.") resolves only if both sides are cleaned
-                // together, exactly as SentenceChunker glues them within a
-                // segment.
+                // no, Alice.", or an uncued re-say: "We were going to go.
+                // [pause] We are going to go.") resolves only if both sides
+                // are cleaned together, exactly as SentenceChunker glues
+                // them within a segment.
                 out[out.count - 1] = await LocalCleanup.$chunkSpan.withValue([index - 1, index]) {
                     await recleanAcrossPause(prev, piece.text)
                 }
@@ -91,15 +94,38 @@ extension Coordinator {
     }
 
     /// Re-clean the last sentence of `head` with the first of `next` (a
-    /// correction cue crossing a pause).
+    /// correction crossing a pause). Only those two sentences go to cleanup;
+    /// everything around them keeps its own text and separators, newlines
+    /// included (review of PR #29: splitting both sides into sentences and
+    /// rejoining them with spaces flattened every paragraph break).
     static func recleanAcrossPause(_ head: String, _ next: String) async -> String {
-        let headSentences = SentenceChunker.split(head)
-        let nextSentences = SentenceChunker.split(next)
-        guard let last = headSentences.last, let first = nextSentences.first else {
+        let (before, last) = splitLastSentence(head)
+        let (first, after) = splitFirstSentence(next)
+        guard !last.isEmpty, !first.isEmpty else {
             return [head, next].filter { !$0.isEmpty }.joined(separator: " ")
         }
         let joined = await LocalCleanup.apply(to: last + " " + first)
-        return (headSentences.dropLast() + [joined] + nextSentences.dropFirst()).joined(separator: " ")
+        return before + joined + after
+    }
+
+    /// `text` as (everything before its last sentence, with the separator
+    /// that preceded it; the last sentence of its last line).
+    nonisolated static func splitLastSentence(_ text: String) -> (before: String, last: String) {
+        var start = text.range(of: "\n", options: .backwards)?.upperBound ?? text.startIndex
+        while let mark = text.range(of: #"(?<=[.!?…])\s+"#, options: .regularExpression, range: start..<text.endIndex),
+              mark.upperBound < text.endIndex {
+            start = mark.upperBound
+        }
+        return (String(text[..<start]), String(text[start...]))
+    }
+
+    /// `text` as (the first sentence of its first line; the separator after
+    /// it and everything that follows).
+    nonisolated static func splitFirstSentence(_ text: String) -> (first: String, after: String) {
+        let lineEnd = text.firstIndex(of: "\n") ?? text.endIndex
+        let line = text[..<lineEnd]
+        let end = text.range(of: #"(?<=[.!?…])\s+"#, options: .regularExpression, range: line.startIndex..<lineEnd)?.lowerBound ?? lineEnd
+        return (String(text[..<end]), String(text[end...]))
     }
 
     /// Join the halves of a sentence a cap cut split: drop the head's

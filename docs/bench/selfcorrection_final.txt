@@ -1,0 +1,182 @@
+SC|research|U01|repair|pass|2.05|ai|bigram-restart|We are going to go.
+SC|research|U02|repair|pass|0.58|ai|bigram-restart|We are going to go.
+SC|research|U03|repair|pass|0.55|ai|bigram-restart|We are going to go.
+SC|research|U04|repair|FAIL|1.67|ai|sentence-revision|I want to send this on Thursday. On Friday.
+SC|research|U05|repair|pass|0.88|ai|subject-restart|I think we should postpone the launch.
+SC|research|U06|repair|FAIL|0.94|ai|always|Send it to Sam to Priya.
+SC|research|U07|repair|pass|0.84|ai|subject-restart|I cannot approve the refund.
+SC|research|U08|repair|FAIL|0.93|ai|always|The total is twelve, fifteen dollars.
+SC|research|M01|repair|pass|0.84|ai|bigram-restart|We are going to go.
+SC|research|M02|repair|pass|0.63|ai|bigram-restart|We are going to go.
+SC|research|M03|repair|FAIL|0.89|basic|always+gate-reject(truncation)|Send the report to Sam, I mean Priya.
+SC|research|M04|repair|pass|0.72|ai|always|Meet at five.
+SC|research|M05|repair|pass|1.81|ai|bigram-restart|I cannot approve the refund.
+SC|research|M06|repair|pass|0.72|ai|always|The deadline is Monday.
+SC|research|C01|preserve|pass|1.88|basic|bigram-restart+gate-reject(unlicensed-deletion)|We were going to go yesterday. We are going to go tomorrow.
+SC|research|C02|preserve|pass|1.85|basic|bigram-restart+gate-reject(unlicensed-deletion)|We were going to go, but we are going to stay.
+SC|research|C03|preserve|pass|1.96|ai|bigram-restart|We must test this. We must test this before release.
+SC|research|C04|preserve|pass|1.82|ai|doubled-word|I really really want this to work.
+SC|research|C05|preserve|pass|0.81|ai|always|Do not delete the old backups until Maya approves.
+SC|research|C06|preserve|pass|0.95|ai|always|I’m sorry we missed the deadline. We will send an update Friday.
+SC|research|C07|preserve|pass|0.91|ai|always|The phrase “scratch that” appears in the transcript.
+SC|research|C08|preserve|pass|0.73|ai|always|Should we postpone the launch?
+SC|research|C09|preserve|pass|1.03|ai|always|Priya approved the $480 refund, but Maya did not approve the $840 invoice.
+SC|research|C10|preserve|pass|1.82|basic|doubled-word+gate-reject(emphasis-repeat)|We had had several discussions before deciding.
+SC|research|C11|preserve|pass|0.81|ai|always|Monday or Tuesday would work; Friday would not.
+SC|research|C12|preserve|pass|0.76|ai|always|Please send the draft to Sam and Priya.
+SC|research|P01|repair|pass|2.48|ai|bigram-restart|Can you send this to the team? We are going to go. Please update the calendar.
+SC|research|P02|repair|FAIL|2.89|ai|sentence-revision|I want to send this on Thursday. On Friday. Priya should review it first, and we must not publish it yet.
+SC|research|P03|repair|pass|1.70|ai|always|The test results are ready. Send them to Priya. Keep the raw logs for 72 hours.
+SC|research|P04|preserve|pass|2.86|ai|bigram-restart|We were going to go, but we are going to stay. Please tell Priya. I’m sorry for the last-minute change.
+SC|tally|research|repair 12/17|preserve 13/13|mean 1.31s|p95 2.86s
+SC|validation|V01|repair|FAIL|1.98|ai|bigram-restart|I'll call you at noon. I'll call you at one.
+SC|validation|V02|repair|pass|0.75|ai|always|The meeting is in room five.
+SC|validation|V03|repair|pass|0.71|ai|always|Book the flight for Wednesday.
+SC|validation|V04|repair|pass|0.79|ai|always|Ask Mia to review it.
+SC|validation|V05|repair|FAIL|1.85|ai|subject-restart|We should we must finish the audit today.
+SC|validation|V06|repair|pass|0.81|ai|always|The office is closed on Tuesday.
+SC|validation|V07|repair|FAIL|0.99|ai|bigram-restart|Let's use the blue one. Let's use the green one.
+SC|validation|V08|repair|pass|0.89|ai|always|He has four kids.
+SC|validation|V09|repair|FAIL|0.96|ai|sentence-revision|Please send it to the legal team. To the finance team.
+SC|validation|V10|repair|pass|0.93|ai|always|Can you review the pull request today?
+SC|validation|V11|preserve|pass|2.13|ai|bigram-restart|I'll call you at noon, and I'll call him at one.
+SC|validation|V12|preserve|pass|1.07|ai|bigram-restart|Let's use the blue one for the header and the green one for the footer.
+SC|validation|V13|preserve|pass|1.07|ai|always|She said to scratch that idea because it won't work.
+SC|validation|V14|preserve|pass|0.91|ai|always|The launch isn't in March, it's in April.
+SC|validation|V15|preserve|pass|0.87|ai|subject-restart|We were late. We are never late.
+SC|validation|V16|preserve|FAIL|1.42|ai|word-restart|Thank you so much.
+SC|validation|V17|preserve|pass|0.90|ai|always|I mean it, this has to ship on Friday.
+SC|validation|V18|preserve|pass|0.90|ai|always|Sorry, I can't make it to the call today.
+SC|validation|V19|preserve|pass|0.81|ai|always|Please do not share the password with anyone.
+SC|validation|V20|preserve|pass|0.96|ai|bigram-restart|We tested it on Monday. We tested it again on Friday.
+SC|validation|V21|preserve|pass|1.43|basic|doubled-word+gate-reject(emphasis-repeat)|It was a long, long day.
+SC|validation|V22|preserve|pass|0.90|ai|word-restart|Call Sam. Call Priya too.
+SC|tally|validation|repair 6/10|preserve 11/12|mean 1.09s|p95 1.98s
+SCT|U01|chunk|bigram-restart|We were going to go. We are going to go.
+SCT|U01|attempt|repair|accepted|We are going to go.
+SCT|U02|chunk|bigram-restart|We were going to, we are going to go.
+SCT|U02|attempt|repair|accepted|We are going to go.
+SCT|U03|chunk|bigram-restart|That we were going to go. We are going to go.
+SCT|U03|attempt|repair|accepted|We are going to go.
+SCT|U04|chunk|sentence-revision|I want to send this on Thursday. On Friday.
+SCT|U04|attempt|repair|gate:truncation|I want to send this on Thursday.
+SCT|U04|attempt|generic|accepted|I want to send this on Thursday. On Friday.
+SCT|U05|chunk|subject-restart|I think we can we should postpone the launch.
+SCT|U05|attempt|repair|accepted|I think we should postpone the launch.
+SCT|U06|chunk|-|Send it to Sam to Priya.
+SCT|U06|attempt|generic|accepted|Send it to Sam to Priya.
+SCT|U07|chunk|subject-restart|I can approve I cannot approve the refund.
+SCT|U07|attempt|repair|accepted|I cannot approve the refund.
+SCT|U08|chunk|-|The total is twelve, fifteen dollars.
+SCT|U08|attempt|generic|accepted|The total is twelve, fifteen dollars.
+SCT|M01|chunk|bigram-restart|We were going to go. Scratch that. We are going to go.
+SCT|M01|attempt|repair|accepted|We are going to go.
+SCT|M02|chunk|bigram-restart|We were going to, scratch that, we are going to go.
+SCT|M02|attempt|repair|accepted|We are going to go.
+SCT|M03|chunk|-|Send the report to Sam, I mean Priya.
+SCT|M03|attempt|generic|gate:truncation|Send the report to Sam
+SCT|M04|chunk|-|Meet at five.
+SCT|M04|attempt|generic|accepted|Meet at five.
+SCT|M05|chunk|bigram-restart|I can approve the refund. Actually, no, I cannot approve the refund.
+SCT|M05|attempt|repair|gate:negation|I can approve the refund.
+SCT|M05|attempt|generic|accepted|I cannot approve the refund.
+SCT|M06|chunk|-|The deadline is Friday, sorry, not Friday, Monday.
+SCT|M06|attempt|generic|accepted|The deadline is Monday.
+SCT|C01|chunk|bigram-restart|We were going to go yesterday. We are going to go tomorrow.
+SCT|C01|attempt|repair|gate:unlicensed-deletion|We are going to go tomorrow.
+SCT|C01|attempt|generic|gate:unlicensed-deletion|We are going to go tomorrow.
+SCT|C02|chunk|bigram-restart|We were going to go, but we are going to stay.
+SCT|C02|attempt|repair|gate:unlicensed-deletion|We were going to stay.
+SCT|C02|attempt|generic|gate:unlicensed-deletion|We are going to stay.
+SCT|C03|chunk|bigram-restart|We must test this. We must test this before release.
+SCT|C03|attempt|repair|gate:unlicensed-deletion|We must test this before release.
+SCT|C03|attempt|generic|accepted|We must test this. We must test this before release.
+SCT|C04|chunk|doubled-word|I really really want this to work.
+SCT|C04|attempt|repair|gate:emphasis-repeat|I really want this to work.
+SCT|C04|attempt|generic|accepted|I really really want this to work.
+SCT|C05|chunk|-|Do not delete the old backups until Maya approves.
+SCT|C05|attempt|generic|accepted|Do not delete the old backups until Maya approves.
+SCT|C06|chunk|-|I’m sorry we missed the deadline. We will send an update Friday.
+SCT|C06|attempt|generic|accepted|I’m sorry we missed the deadline. We will send an update Friday.
+SCT|C07|chunk|-|The phrase “scratch that” appears in the transcript.
+SCT|C07|attempt|generic|accepted|The phrase “scratch that” appears in the transcript.
+SCT|C08|chunk|-|Should we postpone the launch?
+SCT|C08|attempt|generic|accepted|Should we postpone the launch?
+SCT|C09|chunk|-|Priya approved the $480 refund, but Maya did not approve the $840 invoice.
+SCT|C09|attempt|generic|accepted|Priya approved the $480 refund, but Maya did not approve the $840 invoice.
+SCT|C10|chunk|doubled-word|We had had several discussions before deciding.
+SCT|C10|attempt|repair|gate:emphasis-repeat|We had several discussions before deciding.
+SCT|C10|attempt|generic|gate:emphasis-repeat|We had several discussions before deciding.
+SCT|C11|chunk|-|Monday or Tuesday would work; Friday would not.
+SCT|C11|attempt|generic|accepted|Monday or Tuesday would work; Friday would not.
+SCT|C12|chunk|-|Please send the draft to Sam and Priya.
+SCT|C12|attempt|generic|accepted|Please send the draft to Sam and Priya.
+SCT|P01|chunk|-|Can you send this to the team?
+SCT|P01|attempt|generic|accepted|Can you send this to the team?
+SCT|P01|chunk|bigram-restart|We were going to go. We are going to go.
+SCT|P01|attempt|repair|accepted|We are going to go.
+SCT|P01|chunk|-|Please update the calendar.
+SCT|P01|attempt|generic|accepted|Please update the calendar.
+SCT|P02|chunk|sentence-revision|I want to send this on Thursday. On Friday.
+SCT|P02|attempt|repair|gate:truncation|I want to send this on Thursday.
+SCT|P02|attempt|generic|accepted|I want to send this on Thursday. On Friday.
+SCT|P02|chunk|-|Priya should review it first, and we must not publish it yet.
+SCT|P02|attempt|generic|accepted|Priya should review it first, and we must not publish it yet.
+SCT|P03|chunk|-|The test results are ready. Send them to Sam, I mean Priya.
+SCT|P03|attempt|generic|accepted|The test results are ready. Send them to Priya.
+SCT|P03|chunk|-|Keep the raw logs for 72 hours.
+SCT|P03|attempt|generic|accepted|Keep the raw logs for 72 hours.
+SCT|P04|chunk|bigram-restart|We were going to go, but we are going to stay. Please tell Priya.
+SCT|P04|attempt|repair|gate:unlicensed-deletion|We were going to stay. Please tell Priya.
+SCT|P04|attempt|generic|accepted|We were going to go, but we are going to stay. Please tell Priya.
+SCT|P04|chunk|-|I’m sorry for the last-minute change.
+SCT|P04|attempt|generic|accepted|I’m sorry for the last-minute change.
+SCT|V01|chunk|bigram-restart|I'll call you at noon. I'll call you at one.
+SCT|V01|attempt|repair|gate:truncation|I'll call you at noon.
+SCT|V01|attempt|generic|accepted|I'll call you at noon. I'll call you at one.
+SCT|V02|chunk|-|The meeting is in room four, sorry, room five.
+SCT|V02|attempt|generic|accepted|The meeting is in room five.
+SCT|V03|chunk|-|Book the flight for Wednesday.
+SCT|V03|attempt|generic|accepted|Book the flight for Wednesday.
+SCT|V04|chunk|-|Ask Daniel to, scratch that, ask Mia to review it.
+SCT|V04|attempt|generic|accepted|Ask Mia to review it.
+SCT|V05|chunk|subject-restart|We should we must finish the audit today.
+SCT|V05|attempt|repair|gate:unlicensed-deletion|We should must finish the audit today.
+SCT|V05|attempt|generic|accepted|We should we must finish the audit today.
+SCT|V06|chunk|-|The office is closed on Monday, sorry, not Monday, Tuesday.
+SCT|V06|attempt|generic|accepted|The office is closed on Tuesday.
+SCT|V07|chunk|bigram-restart|Let's use the blue one. Let's use the green one.
+SCT|V07|attempt|repair|accepted|Let's use the blue one. Let's use the green one.
+SCT|V08|chunk|-|He has three, no wait, four kids.
+SCT|V08|attempt|generic|accepted|He has four kids.
+SCT|V09|chunk|sentence-revision|Please send it to the legal team. To the finance team.
+SCT|V09|attempt|repair|accepted|Please send it to the legal team. To the finance team.
+SCT|V10|chunk|-|Can you can you review the pull request today?
+SCT|V10|attempt|generic|accepted|Can you review the pull request today?
+SCT|V11|chunk|bigram-restart|I'll call you at noon, and I'll call him at one.
+SCT|V11|attempt|repair|gate:unlicensed-deletion|I'll call you at noon. I'll call him at one.
+SCT|V11|attempt|generic|accepted|I'll call you at noon, and I'll call him at one.
+SCT|V12|chunk|bigram-restart|Let's use the blue one for the header and the green one for the footer.
+SCT|V12|attempt|repair|accepted|Let's use the blue one for the header and the green one for the footer.
+SCT|V13|chunk|-|She said to scratch that idea because it won't work.
+SCT|V13|attempt|generic|accepted|She said to scratch that idea because it won't work.
+SCT|V14|chunk|-|The launch isn't in March, it's in April.
+SCT|V14|attempt|generic|accepted|The launch isn't in March, it's in April.
+SCT|V15|chunk|subject-restart|We were late. We are never late.
+SCT|V15|attempt|repair|accepted|We were late. We are never late.
+SCT|V16|chunk|word-restart|Thank you, thank you so much.
+SCT|V16|attempt|repair|gate:truncation|Thank you
+SCT|V16|attempt|generic|accepted|Thank you, thank you so much.
+SCT|V17|chunk|-|I mean it, this has to ship on Friday.
+SCT|V17|attempt|generic|accepted|I mean it, this has to ship on Friday.
+SCT|V18|chunk|-|Sorry, I can't make it to the call today.
+SCT|V18|attempt|generic|accepted|Sorry, I can't make it to the call today.
+SCT|V19|chunk|-|Please do not share the password with anyone.
+SCT|V19|attempt|generic|accepted|Please do not share the password with anyone.
+SCT|V20|chunk|bigram-restart|We tested it on Monday. We tested it again on Friday.
+SCT|V20|attempt|repair|accepted|We tested it on Monday. We tested it again on Friday.
+SCT|V21|chunk|doubled-word|It was a long, long day.
+SCT|V21|attempt|repair|gate:emphasis-repeat|It was a long day.
+SCT|V21|attempt|generic|gate:emphasis-repeat|It was a long day.
+SCT|V22|chunk|word-restart|Call Sam. Call Priya too.
+SCT|V22|attempt|repair|accepted|Call Sam. Call Priya too.

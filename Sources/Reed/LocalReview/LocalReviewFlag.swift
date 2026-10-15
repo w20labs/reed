@@ -38,10 +38,12 @@ enum LocalReviewVersions {
     /// range (`pcmStart`/`pcmEnd`), the live seal points, and `delivered`,
     /// the cleaned text assembly received.
     static let schema = 6
-    /// The cleanup prompt (AICleanup: "v5", 2026-09-06 — the bounded restart rule).
-    static let prompt = "v5"
-    /// The gate's licence set (round 3, 2026-09-06: the shared restart licence).
-    static let gate = "2026-09-06-r3"
+    /// The cleanup prompt (AICleanup: "v6", 2026-10-14 — natural
+    /// self-correction: re-said sentences, the last version wins).
+    static let prompt = "v6"
+    /// The gate's licence set (2026-10-14: the self-correction licences and
+    /// refusals in CleanupGate+Corrections).
+    static let gate = "2026-10-14-selfcorrection"
 
     static var app: String {
         let info = Bundle.main.infoDictionary

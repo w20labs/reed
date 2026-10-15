@@ -45,11 +45,27 @@ enum StumbleDetector {
             if i + 2 < tokens.count, isContent(tokens[i]), tokens[i + 2] == tokens[i], tokens[i + 1] != tokens[i] {
                 return "word-restart"
             }
+            // A subject restarted with its verb ("we can we should", "I can
+            // approve I cannot approve", natural self-correction 2026-10-14):
+            // the same subject again within three words, a different modal
+            // or auxiliary right after each ("it is what it is" repeats one).
+            if subjects.contains(tokens[i]), i + 3 < tokens.count, verbs.contains(tokens[i + 1]) {
+                for later in (i + 2)...min(tokens.count - 2, i + 3)
+                where tokens[later] == tokens[i] && verbs.contains(tokens[later + 1]) && tokens[later + 1] != tokens[i + 1] {
+                    return "subject-restart"
+                }
+            }
             // Adjacent near-duplicate: prefix or edit distance ≤ 2 on words of 3+.
             if i + 1 < tokens.count, isNearCopy(tokens[i], tokens[i + 1]) { return "near-word" }
         }
         return nil
     }
+
+    private static let subjects: Set<String> = ["i", "we", "you", "he", "she", "they", "it"]
+    private static let verbs: Set<String> = [
+        "can", "cannot", "can't", "could", "couldn't", "should", "shouldn't", "must", "will", "won't", "would",
+        "wouldn't", "may", "might", "shall", "am", "are", "is", "was", "were", "have", "has", "had", "do", "did", "don't"
+    ]
 
     static func isNearCopy(_ left: String, _ right: String) -> Bool {
         // A function word beside a longer word that starts with it is

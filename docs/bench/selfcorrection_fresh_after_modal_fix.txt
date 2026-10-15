@@ -1,0 +1,95 @@
+SC|fresh|F01|repair|FAIL|0.76|basic|always+gate-reject(truncation)|Put the meeting on Wednesday, sorry, Thursday afternoon.
+SC|fresh|F02|repair|FAIL|0.76|basic|always+gate-reject(truncation)|The package weighs two kilos, I mean three kilos.
+SC|fresh|F03|repair|FAIL|1.03|ai|bigram-restart|Let's order the blue chairs. Let's order the gray chairs.
+SC|fresh|F04|repair|pass|0.55|ai|bigram-restart|Invite Lena to the review.
+SC|fresh|F05|repair|pass|0.89|ai|always|The train leaves at ten.
+SC|fresh|F06|repair|FAIL|0.97|ai|bigram-restart|I will finish the slides tonight. I will finish the slides tomorrow.
+SC|fresh|F07|repair|FAIL|1.52|basic|subject-restart+gate-reject(truncation)|We should we could try the other vendor.
+SC|fresh|F08|repair|FAIL|0.82|basic|always+gate-reject(truncation)|Send it to the design team, sorry, the product team.
+SC|fresh|F09|repair|pass|1.73|ai|bigram-restart|My flight is on Tuesday.
+SC|fresh|F10|repair|pass|0.85|ai|bigram-restart|Add milk and butter.
+SC|fresh|F11|repair|pass|0.92|ai|always|The budget is six thousand dollars.
+SC|fresh|F12|repair|FAIL|0.76|basic|always+gate-reject(emphasis-repeat)|I think it's it's broken.
+SC|fresh|F13|repair|pass|0.87|ai|doubled-word|Can you check the logs before lunch?
+SC|fresh|F14|repair|pass|0.96|ai|always|The office opens at seven thirty.
+SC|fresh|F15|repair|FAIL|0.67|basic|always+gate-reject(truncation)|Please call Anna, I mean, please email Anna.
+SC|fresh|G01|preserve|pass|0.75|ai|always|I wanted tea, but I ordered coffee.
+SC|fresh|G02|preserve|pass|0.85|basic|always+gate-reject(unlicensed-deletion)|The first draft was short. The second draft is much longer.
+SC|fresh|G03|preserve|pass|0.82|ai|always|Sorry for the delay, the report is attached.
+SC|fresh|G04|preserve|pass|0.76|ai|always|I mean what I say.
+SC|fresh|G05|preserve|pass|0.85|ai|always|No, I don't think that's right.
+SC|fresh|G06|preserve|pass|0.75|ai|always|We met on Monday and again on Tuesday.
+SC|fresh|G07|preserve|pass|1.73|basic|doubled-word+gate-reject(emphasis-repeat)|It's very, very important.
+SC|fresh|G08|preserve|pass|0.76|ai|always|Do not merge this until the tests pass.
+SC|fresh|G09|preserve|pass|0.76|ai|always|Actually, the meeting went well.
+SC|fresh|G10|preserve|pass|0.85|basic|always+gate-reject(truncation)|She said, "scratch that line," and moved on.
+SC|fresh|G11|preserve|pass|0.81|ai|always|The NASA and ESA teams will meet in May.
+SC|fresh|G12|preserve|pass|0.80|ai|always|Option A is cheaper; option B is faster.
+SC|fresh|G13|preserve|pass|1.78|ai|doubled-word|We had had enough by noon.
+SC|fresh|G14|preserve|pass|0.72|basic|always+gate-reject(negation)|Call me at five, not at six.
+SC|fresh|G15|preserve|pass|0.80|ai|always|Thanks again, and see you on Friday.
+SC|tally|fresh|repair 7/15|preserve 15/15|mean 0.93s|p95 1.73s
+SCT|F01|chunk|-|Put the meeting on Wednesday, sorry, Thursday afternoon.
+SCT|F01|attempt|generic|gate:truncation|Put the meeting on Wednesday.
+SCT|F02|chunk|-|The package weighs two kilos, I mean three kilos.
+SCT|F02|attempt|generic|gate:truncation|The package weighs two kilos.
+SCT|F03|chunk|bigram-restart|Let's order the blue chairs. Let's order the gray chairs.
+SCT|F03|attempt|repair|accepted|Let's order the blue chairs. Let's order the gray chairs.
+SCT|F04|chunk|bigram-restart|Invite Tom to the review, no wait, invite Lena to the review.
+SCT|F04|attempt|repair|accepted|Invite Lena to the review.
+SCT|F05|chunk|-|The train leaves at ten.
+SCT|F05|attempt|generic|accepted|The train leaves at ten.
+SCT|F06|chunk|bigram-restart|I will finish the slides tonight. I will finish the slides tomorrow.
+SCT|F06|attempt|repair|accepted|I will finish the slides tonight. I will finish the slides tomorrow.
+SCT|F07|chunk|subject-restart|We should we could try the other vendor.
+SCT|F07|attempt|repair|gate:truncation|We should try the other vendor.
+SCT|F07|attempt|generic|gate:truncation|We should try the other vendor.
+SCT|F08|chunk|-|Send it to the design team, sorry, the product team.
+SCT|F08|attempt|generic|gate:truncation|Send it to the design team.
+SCT|F09|chunk|bigram-restart|My flight is on Monday. My flight is on Tuesday.
+SCT|F09|attempt|repair|gate:truncation|My flight is on Monday.
+SCT|F09|attempt|generic|accepted|My flight is on Tuesday.
+SCT|F10|chunk|bigram-restart|Add milk and eggs, actually no, add milk and butter.
+SCT|F10|attempt|repair|accepted|Add milk and butter.
+SCT|F11|chunk|-|The budget is five thousand, I mean six thousand dollars.
+SCT|F11|attempt|generic|accepted|The budget is six thousand dollars.
+SCT|F12|chunk|-|I think it's it's broken.
+SCT|F12|attempt|generic|gate:emphasis-repeat|I think it's broken.
+SCT|F13|chunk|doubled-word|Can you check the the logs before lunch?
+SCT|F13|attempt|repair|accepted|Can you check the logs before lunch?
+SCT|F14|chunk|-|The office opens at eight, no, at seven thirty.
+SCT|F14|attempt|generic|accepted|The office opens at seven thirty.
+SCT|F15|chunk|-|Please call Anna, I mean, please email Anna.
+SCT|F15|attempt|generic|gate:truncation|Please call Anna
+SCT|G01|chunk|-|I wanted tea, but I ordered coffee.
+SCT|G01|attempt|generic|accepted|I wanted tea, but I ordered coffee.
+SCT|G02|chunk|-|The first draft was short. The second draft is much longer.
+SCT|G02|attempt|generic|gate:unlicensed-deletion|The second draft is much longer.
+SCT|G03|chunk|-|Sorry for the delay, the report is attached.
+SCT|G03|attempt|generic|accepted|Sorry for the delay, the report is attached.
+SCT|G04|chunk|-|I mean what I say.
+SCT|G04|attempt|generic|accepted|I mean what I say.
+SCT|G05|chunk|-|No, I don't think that's right.
+SCT|G05|attempt|generic|accepted|No, I don't think that's right.
+SCT|G06|chunk|-|We met on Monday and again on Tuesday.
+SCT|G06|attempt|generic|accepted|We met on Monday and again on Tuesday.
+SCT|G07|chunk|doubled-word|It's very, very important.
+SCT|G07|attempt|repair|gate:emphasis-repeat|It's very important.
+SCT|G07|attempt|generic|gate:emphasis-repeat|It's very important.
+SCT|G08|chunk|-|Do not merge this until the tests pass.
+SCT|G08|attempt|generic|accepted|Do not merge this until the tests pass.
+SCT|G09|chunk|-|Actually, the meeting went well.
+SCT|G09|attempt|generic|accepted|Actually, the meeting went well.
+SCT|G10|chunk|-|She said, "scratch that line," and moved on.
+SCT|G10|attempt|generic|gate:truncation|She said, "and moved on."
+SCT|G11|chunk|-|The NASA and ESA teams will meet in May.
+SCT|G11|attempt|generic|accepted|The NASA and ESA teams will meet in May.
+SCT|G12|chunk|-|Option A is cheaper; option B is faster.
+SCT|G12|attempt|generic|accepted|Option A is cheaper; option B is faster.
+SCT|G13|chunk|doubled-word|We had had enough by noon.
+SCT|G13|attempt|repair|gate:emphasis-repeat|We had enough by noon.
+SCT|G13|attempt|generic|accepted|We had had enough by noon.
+SCT|G14|chunk|-|Call me at five, not at six.
+SCT|G14|attempt|generic|gate:negation|Call me at five.
+SCT|G15|chunk|-|Thanks again, and see you on Friday.
+SCT|G15|attempt|generic|accepted|Thanks again, and see you on Friday.

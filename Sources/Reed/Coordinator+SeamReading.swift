@@ -29,10 +29,11 @@ extension Coordinator {
         let pcm = pcm.startIndex == 0 ? pcm : Data(pcm)
         for index in pieces.indices.dropFirst() where pieces[index - 1].sealedBy == .pause {
             let head = pieces[index - 1].text, next = pieces[index].text
-            // A correction cue crossing the pause is assembly's own case —
-            // both halves re-cleaned together, the verdict ignored — so it is
-            // not read (review 2026-09-11, round 2).
-            guard !head.isEmpty, !next.isEmpty, !SentenceChunker.opensWithCorrectionCue(next), index < ranges.count,
+            // A correction crossing the pause (a cue, or an uncued re-say) is
+            // assembly's own case — both halves re-cleaned together, the
+            // verdict ignored — so it is not read (review 2026-09-11, round 2).
+            guard !head.isEmpty, !next.isEmpty, !SentenceChunker.opensWithCorrectionCue(next),
+                  !SentenceRevision.revisesAcrossPause(head: head, next: next), index < ranges.count,
                   let headRange = ranges[index - 1], let nextRange = ranges[index],
                   let window = SeamReading.window(pcm: pcm, seal: headRange.upperBound,
                                                   headStart: headRange.lowerBound, nextEnd: nextRange.upperBound) else {

@@ -71,28 +71,28 @@ enum CleanupGate {
         verdict(input: input, output: output, repairHint: repairHint).rejection
     }
 
-    private static let fillers: Set<String> = ["um", "umm", "uh", "uhh", "uhm", "er", "erm", "mm", "ah"]
+    static let fillers: Set<String> = ["um", "umm", "uh", "uhh", "uhm", "er", "erm", "mm", "ah"]
     /// Repeats of these collapse silently ("the the"); a repeat of anything
     /// else is emphasis and must survive. The one list, shared with the
     /// restart licence.
     private static var functionWords: Set<String> { RestartLicence.functionWords }
     /// Repeated adjacent, these are stumbles, never emphasis.
-    private static let auxiliaries: Set<String> = [
+    static let auxiliaries: Set<String> = [
         "am", "are", "was", "were", "be", "been", "has", "have", "had", "do", "does", "did",
         "will", "would", "can", "could", "should", "shall", "may", "might", "must"
     ]
     /// Words that mark a spoken self-correction. Their presence licenses one
     /// structural deletion span even without the repair hint.
-    private static let markers: Set<String> = [
+    static let markers: Set<String> = [
         "sorry", "rather", "wait", "mean", "scratch", "actually", "no", "okay"
     ]
     /// Deleting one of these changes what the sentence obligates or denies.
     /// Bare "no" is excluded deliberately — it is usually the correction
     /// marker; inversion damage always shows up as a lost "not"/"n't".
-    private static let negations: Set<String> = ["not", "never", "cannot"]
+    static let negations: Set<String> = ["not", "never", "cannot"]
     /// Losing the only one changes what the sentence obligates; losing one
     /// of two to a restart does not.
-    private static let modals: Set<String> = ["must", "should", "shall", "may"]
+    static let modals: Set<String> = ["must", "should", "shall", "may"]
     /// Words a dictation may open with that carry no content ("so", "okay
     /// so", "but") — an article or pronoun at the start is content.
     private static let openers: Set<String> = ["so", "but", "and", "okay", "well", "oh", "yeah", "right"]
@@ -111,7 +111,9 @@ enum CleanupGate {
     static func verdict(input: String, output: String, repairHint: Bool) -> GateVerdict {
         let inputTokens = tokens(of: input)
         let inRaw = inputTokens.map(\.text), outRaw = rawTokens(output)
-        let inTok = inRaw.map(fold), outTok = outRaw.map(fold)
+        // Identity ignores case (both prompts allow capitalization changes);
+        // classification does not: "UM" is no filler, "AI" no stutter.
+        let inCase = caseKeys(input, tokens: inputTokens), outCase = caseKeys(output, tokens: tokens(of: output)), inTok = inCase.map(identity), outTok = outCase.map(identity)
         let negations = GateVerdict.Negations(input: negationCount(inRaw), output: negationCount(outRaw))
         let inModals = modalSet(inTok), outModals = modalSet(outTok)
         let newlinesAdded = max(0, output.filter({ $0.isNewline }).count - input.filter({ $0.isNewline }).count)
@@ -146,7 +148,7 @@ enum CleanupGate {
         for token in outTok {
             if let remaining = counts[token], remaining > 0 { counts[token] = remaining - 1 } else { wordAdded = true }
         }
-        let aligned = alignment(input: inTok, output: outTok)
+        let aligned = alignment(input: inTok, output: outTok, inputCase: inCase, outputCase: outCase)
         let additions = aligned.added.map { GateVerdict.Addition(outputToken: $0, word: outTok[$0]) }
 
         // 3. Every deleted span must be explainable — classified for every
@@ -160,7 +162,7 @@ enum CleanupGate {
             // slide the CLASSIFICATION window left while the alignment is
             // equivalent. The map keeps the aligned span.
             var span = rawSpan
-            while span.lowerBound > 0, inTok[span.lowerBound - 1] == inTok[span.upperBound - 1] {
+            while span.lowerBound > 0, inCase[span.lowerBound - 1] == inCase[span.upperBound - 1] {
                 span = (span.lowerBound - 1)..<(span.upperBound - 1)
             }
             let characters = inputTokens[rawSpan.lowerBound].characters.lowerBound..<inputTokens[rawSpan.upperBound - 1].characters.upperBound
@@ -171,6 +173,9 @@ enum CleanupGate {
             if span.lowerBound == 0, span.allSatisfy({ openers.contains(inTok[$0]) || isCue($0, inTok) }) {
                 record(licence: .opener, fault: nil); continue
             }
+            // Self-correction shapes (CleanupGate+Corrections), judged before
+            // the restart licence, which never checked sentence marks.
+            if let judged = correctionVerdict(raw: rawSpan, window: span, input: input, tokens: inputTokens, keys: inCase) { record(licence: judged.licence, fault: judged.fault); spanRejection = spanRejection ?? judged.rejection; continue }
             // The one restart rule (RestartLicence): shared with the rules
             // pass and seam assembly, so a restart the model deletes and a
             // restart the app collapses itself are the same thing.
@@ -187,12 +192,13 @@ enum CleanupGate {
                 // "re re rework", "c cloud").
                 var next = i + 1
                 while next < inTok.count, inTok[next] == word { next += 1 }
-                if next < inTok.count, inTok[next].hasPrefix(word), word.count < inTok[next].count { continue }
+                if next < inTok.count, isStutter(inCase[i], before: inTok[next]) { continue }
                 // Adjacent repeat: silent collapse for function words only —
                 // a repeated content word is emphasis, hard reject.
                 let repeatsNeighbor = (i + 1 < inTok.count && inTok[i + 1] == word)
                     || (i > 0 && inTok[i - 1] == word)
                 if repeatsNeighbor {
+                    if grammaticalDoubles.contains(word) { emphasis = true; break }
                     // Auxiliaries and negations can't be emphasis either:
                     // "hasn't hasn't been", "is is" (round 2).
                     // Nor can a doubled marker: "no, no, actually" is one cue.
@@ -220,19 +226,17 @@ enum CleanupGate {
             // Each span needs its own license: the repair hint or a marker
             // inside/adjacent to it. Up to `maxStructuralSpans` of them —
             // a chunk with four stumbles loses four spans (round 2).
-            let licensed = repairHint || spanNearMarker(span, tokens: inTok)
+            let licensed = repairHint || spanNearMarker(span, tokens: inTok, quoted: quotedIndices(input: input, tokens: inputTokens))
             if !licensed { record(licence: nil, fault: .unlicensed); spanRejection = spanRejection ?? .unlicensedDeletion; continue }
             if structuralSpans > maxStructuralSpans { record(licence: nil, fault: .tooMany); spanRejection = spanRejection ?? .multipleDeletions; continue }
             record(licence: .structural, fault: nil)
         }
         let protectedMissing = unexcusedProtected(input: input, output: output, tokens: inputTokens, deletions: deletions)
 
-        let rejection: Rejection?
-        if !protectedMissing.isEmpty { rejection = .protectedToken }
-        else if wordAdded { rejection = .addedWord }
-        else if negations.input != negations.output || inModals != outModals { rejection = .negationChanged }
-        else if newlinesAdded > 0 { rejection = .newlineAdded }
-        else { rejection = spanRejection }
+        let meaningChanged = negations.input - correctionNegations(aligned.deleted, input: input, tokens: inputTokens, keys: inTok) != negations.output || !modalsKept(input: inModals, output: outModals, excused: restartModals(deletions, input: input, tokens: inputTokens, keys: inTok, modals: modals))
+        let rejection = [(!protectedMissing.isEmpty, Rejection.protectedToken), (wordAdded, .addedWord), (meaningChanged, .negationChanged),
+                         (newlinesAdded > 0, .newlineAdded), (joinsModals(input: inTok, output: outTok), .unlicensedDeletion), (losesFinalVersion(input: input, tokens: inputTokens, keys: inCase, output: outCase) || dropsLaterModal(input: inTok, output: outTok), .truncation)]
+            .first(where: \.0)?.1 ?? spanRejection
         return make(rejection, deletions: deletions, additions: additions, protectedMissing: protectedMissing)
     }
     // swiftlint:enable cyclomatic_complexity
@@ -244,7 +248,7 @@ enum CleanupGate {
     /// between two options: an apology is content ("I'm sorry, I can't make
     /// it", "Sorry, I'm late", "really sorry about the delay" — field
     /// 2026-10-07, the model deleted "I'm sorry" and the gate let it).
-    private static func isCue(_ i: Int, _ tokens: [String]) -> Bool {
+    static func isCue(_ i: Int, _ tokens: [String]) -> Bool {
         guard markers.contains(tokens[i]), i < tokens.count - 1 else { return false }
         guard tokens[i] == "sorry" else { return true }
         return i > 0 && !apologyLeads.contains(tokens[i - 1]) && !apologyObjects.contains(tokens[i + 1])
@@ -273,7 +277,7 @@ enum CleanupGate {
             .map(String.init)
     }
 
-    private static func fold(_ token: String) -> String {
+    static func fold(_ token: String) -> String {
         token.replacingOccurrences(of: "'", with: "")
     }
 
@@ -313,7 +317,9 @@ enum CleanupGate {
         var index = 0
         var previousTrailingComma = true   // an aside may open the text
         for raw in text.split(whereSeparator: \.isWhitespace) {
-            let tokens = rawTokens(String(raw)).map(fold)
+            // An aside in capitals ("START, LIKE, STOP") is content.
+            let capitals = raw.count >= 2 && raw.contains(where: \.isLetter) && !raw.contains(where: \.isLowercase)
+            let tokens = rawTokens(String(raw)).map { capitals ? "^" + fold($0) : fold($0) }
             let trailing = raw.last.map { ",;".contains($0) } ?? false
             words.append(Word(tokens: tokens, firstIndex: index, leadingComma: previousTrailingComma, trailingComma: trailing))
             index += tokens.count
@@ -331,24 +337,34 @@ enum CleanupGate {
         return result.filter { $0 < tokenCount }
     }
 
-    private static func spanNearMarker(_ span: Range<Int>, tokens: [String]) -> Bool {
+    /// A cue inside a quotation is content ("He wrote \"Sam, I mean Priya\"")
+    /// and licenses nothing (review of PR #29, the marker sibling).
+    private static func spanNearMarker(_ span: Range<Int>, tokens: [String], quoted: Set<Int>) -> Bool {
         let lo = max(0, span.lowerBound - 1)
         let hi = min(tokens.count - 1, span.upperBound)
-        return (lo...hi).contains { isCue($0, tokens) }
+        return (lo...hi).contains { isCue($0, tokens) && !quoted.contains($0) }
     }
 
     /// The one alignment (LCS, the traceback the gate has always used):
     /// contiguous input index ranges absent from the output, and the output
     /// indices matched to nothing. Deletions are disjoint; input minus the
-    /// deletions equals output minus the additions.
-    static func alignment(input: [String], output: [String]) -> (deleted: [Range<Int>], added: [Int]) {
+    /// deletions equals output minus the additions. Among alignments with
+    /// equally many matches, the one matching more words in their written
+    /// case wins (`inputCase`/`outputCase`, the `caseKeys`): "The pr PR
+    /// preparation" → "The PR preparation" deletes the fragment, not the
+    /// acronym (tenth review of PR #29). Text whose matches all agree in
+    /// case aligns exactly as before.
+    static func alignment(input: [String], output: [String], inputCase: [String]? = nil, outputCase: [String]? = nil) -> (deleted: [Range<Int>], added: [Int]) {
         let rows = input.count, cols = output.count
+        func match(_ i: Int, _ col: Int) -> Int {
+            guard input[i] == output[col] else { return 0 }
+            return 1000 + (inputCase.map { $0[i] } == outputCase.map { $0[col] } ? 1 : 0)
+        }
         var lcs = Array(repeating: Array(repeating: 0, count: cols + 1), count: rows + 1)
         for i in stride(from: rows - 1, through: 0, by: -1) {
             for col in stride(from: cols - 1, through: 0, by: -1) {
-                lcs[i][col] = input[i] == output[col]
-                    ? lcs[i + 1][col + 1] + 1
-                    : max(lcs[i + 1][col], lcs[i][col + 1])
+                let score = match(i, col)
+                lcs[i][col] = max(score > 0 ? lcs[i + 1][col + 1] + score : 0, max(lcs[i + 1][col], lcs[i][col + 1]))
             }
         }
         var spans: [Range<Int>] = []
@@ -356,7 +372,7 @@ enum CleanupGate {
         var i = 0, col = 0
         var spanStart: Int?
         while i < rows {
-            if col < cols, input[i] == output[col], lcs[i][col] == lcs[i + 1][col + 1] + 1 {
+            if col < cols, match(i, col) > 0, lcs[i][col] == lcs[i + 1][col + 1] + match(i, col) {
                 if let s = spanStart { spans.append(s..<i); spanStart = nil }
                 i += 1; col += 1
             } else if col < cols, lcs[i][col + 1] >= lcs[i + 1][col] {

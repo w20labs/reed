@@ -303,6 +303,12 @@ enum LocalCleanup {
         // Repair-prompt trigger round (2026-08-29): the field stumbles the
         // repair prompt fixes and the generic one leaves alone.
         if let restart = StumbleDetector.restart(text) { return restart }
+        // A sentence re-said right after itself, changed (natural
+        // self-correction, 2026-10-14): known-broken speech, like a restart.
+        let sentences = SentenceChunker.sentences(text)
+        if zip(sentences, sentences.dropFirst()).contains(where: { SentenceRevision.revises(previous: $0, next: $1) }) {
+            return "sentence-revision"
+        }
         return nil
     }
 

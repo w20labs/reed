@@ -7,11 +7,21 @@ import Foundation
 /// sentence capitalization. It only ever *deletes* known fillers or adjusts
 /// casing/whitespace — it never rewrites words, so meaning is preserved.
 enum BasicCleanup {
-    /// Bare fillers stripped anywhere. "you know" and "i mean" are NOT here —
-    /// as bare phrases they are routinely content ("Do you know the answer?"),
-    /// so they're only removed in the comma-bounded aside form below; the bare
-    /// forms are left for the AI tier's judgement.
+    /// Bare fillers stripped anywhere. "you know" is NOT here — as a bare
+    /// phrase it is routinely content ("Do you know the answer?"), so it is
+    /// only removed in the comma-bounded aside form below. "I mean" is never
+    /// removed by rules (a correction cue); both are left for the AI tier.
     private static let fillers = ["umm", "um", "uhh", "uhm", "uh", "erm"]
+
+    /// A filler as spoken: lowercase, or capitalised at a sentence start
+    /// ("um", "Um") — never in capitals: "UM", "ER" are acronyms (the
+    /// University of Michigan, an emergency room), content to keep (eighth
+    /// review of PR #29: the post-check stripped "UM" from a gate-accepted
+    /// proposal).
+    private static func casedFiller(_ filler: String) -> String {
+        guard let first = filler.first else { return filler }
+        return "[\(first.uppercased())\(first)]" + filler.dropFirst()
+    }
 
     /// A filler flush against a quote mark is being *mentioned*, not spoken
     /// ("as soon as I say \"um\"…") — the bare-word pass must never strip it.
@@ -21,22 +31,29 @@ enum BasicCleanup {
     /// True when the text still contains a bare, unquoted filler — i.e. one
     /// `clean` would strip. Used as the post-check on the AI tier's output.
     static func hasStrippableFiller(_ text: String) -> Bool {
-        text.range(of: "(?i)\(quoteGuardBefore)\\b(?:umm?|uhh?|uhm|erm)\\b\(quoteGuardAfter)",
+        text.range(of: "\(quoteGuardBefore)\\b(?:[Uu]mm?|[Uu]hh?|[Uu]hm|[Ee]rm)\\b\(quoteGuardAfter)",
                    options: .regularExpression) != nil
     }
 
     static func clean(_ text: String) -> String {
         var s = text
-        // Comma-bounded fillers first — ", uh," / ", like," / ", I mean," —
+        // Comma-bounded fillers first — ", uh," / ", like," / ", you know," —
         // removing the whole aside avoids the comma debris the per-word pass
-        // leaves ("we should, grab"). "like"/"I mean" are ONLY stripped in this
-        // comma-bounded form: as bare words they're real content ("I like it").
+        // leaves ("we should, grab"). "like"/"you know" are ONLY stripped in
+        // this comma-bounded form: as bare words they're real content ("I like
+        // it"). In capitals an aside is content too ("START, LIKE, STOP").
+        // "I mean" is never stripped, comma-bounded or not: it is the cue of
+        // a correction this pass cannot resolve, and without it "five, I
+        // mean, six open roles" read as "five six open roles", two options as
+        // one (fallback review of PR #29). Every rules
+        // path keeps it: a refused or failed model call, a spent budget, no
+        // Apple Intelligence, the rules tier.
         s = s.replacingOccurrences(
-            of: "(?i),\\s*(?:umm?|uhh?|uhm|erm|like|i mean|you know)\\s*,",
+            of: ",\\s*(?:[Uu]mm?|[Uu]hh?|[Uu]hm|[Ee]rm|[Ll]ike|[Yy]ou know)\\s*,",
             with: "", options: .regularExpression)
         for filler in fillers {
             s = s.replacingOccurrences(
-                of: "(?i)\(quoteGuardBefore)\\b\(filler)\\b\(quoteGuardAfter),?\\s?",
+                of: "\(quoteGuardBefore)\\b\(casedFiller(filler))\\b\(quoteGuardAfter),?\\s?",
                 with: "", options: .regularExpression)
         }
         // A restart the speaker made ("tell me tell me what you think") is

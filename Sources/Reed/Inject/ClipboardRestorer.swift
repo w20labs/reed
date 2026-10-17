@@ -25,9 +25,9 @@ final class ClipboardRestorer {
         let saved: [[(NSPasteboard.PasteboardType, Data)]]
         let text: String
         let generation: Int
-        /// Set by the first restore, so later checks finding the user's own
-        /// clipboard back are not logged as a skip.
-        fileprivate(set) var restored = false
+        /// When the dictation went onto the clipboard (uptime), for the
+        /// diagnostic's actual elapsed time.
+        let started = DispatchTime.now().uptimeNanoseconds
 
         init(pasteboard: NSPasteboard, saved: [[(NSPasteboard.PasteboardType, Data)]], text: String, generation: Int) {
             self.pasteboard = pasteboard
@@ -98,31 +98,70 @@ final class ClipboardRestorer {
             let last = index == Self.checkDelays.count - 1
             after(delay) { [weak self] in
                 guard let self else { return }
-                self.restoreIfStillOurs(paste)
+                self.restoreIfStillOurs(paste, scheduled: delay)
                 if last, self.pending === paste { self.pending = nil }
             }
         }
     }
 
+    /// One restore check, as logged: counts, change counts and booleans,
+    /// never the clipboard's contents. Tells an empty clipboard Reed found
+    /// (items before 0, left) from one Reed emptied (saved 0, restored).
+    enum CheckAction: String { case restored, left, superseded }
+
+    struct Check: Equatable {
+        let pasteID: Int
+        let scheduledMs: Int
+        let elapsedMs: Int
+        let savedItems: Int
+        let itemsBefore: Int
+        let changeBefore: Int
+        let hasText: Bool
+        let textMatches: Bool
+        let itemsAfter: Int
+        let changeAfter: Int
+        let action: CheckAction
+
+        var line: String {
+            "clipboard check paste=\(pasteID) scheduled=\(scheduledMs)ms actual=\(elapsedMs)ms saved=\(savedItems)"
+                + " before=\(itemsBefore) items cc=\(changeBefore) text=\(hasText) matches=\(textMatches)"
+                + " after=\(itemsAfter) items cc=\(changeAfter) action=\(action.rawValue)"
+        }
+    }
+
+    /// Sees every check after it is logged (tests).
+    var onCheck: ((Check) -> Void)?
+
     /// Restores the user's clipboard while it still holds exactly the
-    /// dictation and no later paste has taken over. Returns whether it did.
+    /// dictation and no later paste has taken over.
     @discardableResult
-    func restoreIfStillOurs(_ paste: Paste) -> Bool {
-        guard paste.generation == generation else { return false }
+    func restoreIfStillOurs(_ paste: Paste, scheduled: TimeInterval = 0) -> Check {
         let board = paste.pasteboard
-        guard board.string(forType: .string) == paste.text else {
-            if !paste.restored { clog.info("clipboard holds something other than the dictation — leaving it") }
-            return false
+        let itemsBefore = board.pasteboardItems?.count ?? 0, changeBefore = board.changeCount
+        let current = board.string(forType: .string)
+        let action: CheckAction
+        if paste.generation != generation {
+            action = .superseded
+        } else if current == paste.text {
+            board.clearContents()
+            let items = paste.saved.map { types in
+                let item = NSPasteboardItem()
+                for (type, data) in types { item.setData(data, forType: type) }
+                return item
+            }
+            if !items.isEmpty { board.writeObjects(items) }
+            action = .restored
+        } else {
+            action = .left
         }
-        board.clearContents()
-        let items = paste.saved.map { types in
-            let item = NSPasteboardItem()
-            for (type, data) in types { item.setData(data, forType: type) }
-            return item
-        }
-        if !items.isEmpty { board.writeObjects(items) }
-        if paste.restored { clog.info("dictation re-written to the clipboard after the restore — restored again") }
-        paste.restored = true
-        return true
+        let check = Check(
+            pasteID: paste.generation, scheduledMs: Int((scheduled * 1000).rounded()),
+            elapsedMs: Int((DispatchTime.now().uptimeNanoseconds - paste.started) / 1_000_000),
+            savedItems: paste.saved.count, itemsBefore: itemsBefore, changeBefore: changeBefore,
+            hasText: current != nil, textMatches: current == paste.text,
+            itemsAfter: board.pasteboardItems?.count ?? 0, changeAfter: board.changeCount, action: action)
+        clog.info(check.line)
+        onCheck?(check)
+        return check
     }
 }

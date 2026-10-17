@@ -25,6 +25,8 @@ final class TextInjector {
     /// The receipt of the last `inject`.
     private(set) var lastReceipt: Receipt?
 
+    private let restorer = ClipboardRestorer()
+
     @discardableResult
     func inject(_ text: String) -> Receipt {
         // The injected string is on-device-model-controlled, so it's
@@ -182,37 +184,12 @@ final class TextInjector {
             return
         }
 
-        // Snapshot existing pasteboard so we can restore it after our paste.
-        let savedItems: [NSPasteboardItem] = (pb.pasteboardItems ?? []).map { item in
-            let copy = NSPasteboardItem()
-            for type in item.types {
-                if let data = item.data(forType: type) {
-                    copy.setData(data, forType: type)
-                }
-            }
-            return copy
-        }
-
-        pb.clearContents()
-        pb.setString(text, forType: .string)
-        let ourChangeCount = pb.changeCount
-
+        // Snapshot the clipboard, paste, then put it back while it still
+        // holds the dictation (see `ClipboardRestorer`).
+        let paste = restorer.begin(text, on: pb)
         synthesizeCommandV()
-
-        // Restore the original clipboard after the paste lands — but ONLY if
-        // the pasteboard still holds our paste. If the user (or any app)
-        // copied something in the window, restoring would overwrite their
-        // new clipboard with the stale snapshot (finding 2026-08-25).
-        let restoreAfter: TimeInterval = 0.2
-        DispatchQueue.main.asyncAfter(deadline: .now() + restoreAfter) {
-            guard pb.changeCount == ourChangeCount else {
-                ilog.info("clipboard changed during paste window — skipping snapshot restore")
-                return
-            }
-            pb.clearContents()
-            if !savedItems.isEmpty {
-                pb.writeObjects(savedItems)
-            }
+        restorer.scheduleRestore(paste) { delay, check in
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: check)
         }
     }
 

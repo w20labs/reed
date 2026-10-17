@@ -25,6 +25,8 @@ final class TextInjector {
     /// The receipt of the last `inject`.
     private(set) var lastReceipt: Receipt?
 
+    private let restorer = ClipboardRestorer()
+
     @discardableResult
     func inject(_ text: String) -> Receipt {
         // The injected string is on-device-model-controlled, so it's
@@ -169,50 +171,12 @@ final class TextInjector {
         return range
     }
 
+    /// Untrusted, macOS discards a synthesized ⌘V, so the clipboard is the
+    /// delivery and is never restored over; trusted, it is a vehicle and the
+    /// user's clipboard comes back (see `ClipboardRestorer`).
     private func pasteViaClipboard(_ text: String) {
-        let pb = NSPasteboard.general
-
-        // Untrusted: macOS will discard the synthesized ⌘V, so the clipboard
-        // is the delivery, not a vehicle — set it and never restore over it
-        // (the restore would erase the user's only copy of the dictation).
-        guard AXIsProcessTrusted() else {
-            pb.clearContents()
-            pb.setString(text, forType: .string)
-            ilog.info("AX untrusted: dictation left on the clipboard, no ⌘V")
-            return
-        }
-
-        // Snapshot existing pasteboard so we can restore it after our paste.
-        let savedItems: [NSPasteboardItem] = (pb.pasteboardItems ?? []).map { item in
-            let copy = NSPasteboardItem()
-            for type in item.types {
-                if let data = item.data(forType: type) {
-                    copy.setData(data, forType: type)
-                }
-            }
-            return copy
-        }
-
-        pb.clearContents()
-        pb.setString(text, forType: .string)
-        let ourChangeCount = pb.changeCount
-
-        synthesizeCommandV()
-
-        // Restore the original clipboard after the paste lands — but ONLY if
-        // the pasteboard still holds our paste. If the user (or any app)
-        // copied something in the window, restoring would overwrite their
-        // new clipboard with the stale snapshot (finding 2026-08-25).
-        let restoreAfter: TimeInterval = 0.2
-        DispatchQueue.main.asyncAfter(deadline: .now() + restoreAfter) {
-            guard pb.changeCount == ourChangeCount else {
-                ilog.info("clipboard changed during paste window — skipping snapshot restore")
-                return
-            }
-            pb.clearContents()
-            if !savedItems.isEmpty {
-                pb.writeObjects(savedItems)
-            }
+        restorer.deliver(text, on: .general, trusted: AXIsProcessTrusted(), pressPaste: synthesizeCommandV) { delay, check in
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: check)
         }
     }
 

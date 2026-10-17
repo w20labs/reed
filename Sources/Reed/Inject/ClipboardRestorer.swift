@@ -37,26 +37,70 @@ final class ClipboardRestorer {
         }
     }
 
-    /// Bumped by every paste: a later paste owns the clipboard, so an older
-    /// paste's pending checks must not restore over it.
+    /// Bumped by every clipboard write of Reed's: a later paste or an
+    /// untrusted delivery owns the clipboard, so an older paste's pending
+    /// checks must not restore over it.
     private var generation = 0
+
+    /// The latest paste while its checks are still pending. A paste that
+    /// begins while the clipboard still holds this one's dictation (not yet
+    /// restored, or echoed back) carries its snapshot: the clipboard then is
+    /// Reed's own text, not the user's (review of PR #30).
+    private var pending: Paste?
 
     /// Snapshots the clipboard, then puts `text` on it for the paste.
     func begin(_ text: String, on pasteboard: NSPasteboard) -> Paste {
-        let saved = (pasteboard.pasteboardItems ?? []).map { item in
-            item.types.compactMap { type in item.data(forType: type).map { (type, $0) } }
+        let saved: [[(NSPasteboard.PasteboardType, Data)]]
+        if let pending, pending.pasteboard == pasteboard, pasteboard.string(forType: .string) == pending.text {
+            saved = pending.saved
+        } else {
+            saved = (pasteboard.pasteboardItems ?? []).map { item in
+                item.types.compactMap { type in item.data(forType: type).map { (type, $0) } }
+            }
         }
         generation += 1
         pasteboard.clearContents()
         pasteboard.setString(text, forType: .string)
-        return Paste(pasteboard: pasteboard, saved: saved, text: text, generation: generation)
+        let paste = Paste(pasteboard: pasteboard, saved: saved, text: text, generation: generation)
+        pending = paste
+        return paste
+    }
+
+    /// Leaves `text` on the clipboard as the delivery itself (no
+    /// Accessibility trust, so no ⌘V), and cancels every pending restore:
+    /// one would erase the user's only copy of the dictation.
+    func leave(_ text: String, on pasteboard: NSPasteboard) {
+        generation += 1
+        pending = nil
+        pasteboard.clearContents()
+        pasteboard.setString(text, forType: .string)
+    }
+
+    /// The clipboard side of the paste fallback: trusted, paste and restore;
+    /// untrusted, leave the dictation there. `pressPaste` posts ⌘V and
+    /// `after` is the clock (the main queue in the app, a recorder in tests).
+    func deliver(_ text: String, on pasteboard: NSPasteboard, trusted: Bool, pressPaste: () -> Void,
+                 after: (TimeInterval, @escaping () -> Void) -> Void) {
+        guard trusted else {
+            leave(text, on: pasteboard)
+            clog.info("AX untrusted: dictation left on the clipboard, no ⌘V")
+            return
+        }
+        let paste = begin(text, on: pasteboard)
+        pressPaste()
+        scheduleRestore(paste, after: after)
     }
 
     /// Schedules every check of `paste`; `after` is the clock (the main
     /// queue in the app, a recorder in tests).
     func scheduleRestore(_ paste: Paste, after: (TimeInterval, @escaping () -> Void) -> Void) {
-        for delay in Self.checkDelays {
-            after(delay) { [weak self] in self?.restoreIfStillOurs(paste) }
+        for (index, delay) in Self.checkDelays.enumerated() {
+            let last = index == Self.checkDelays.count - 1
+            after(delay) { [weak self] in
+                guard let self else { return }
+                self.restoreIfStillOurs(paste)
+                if last, self.pending === paste { self.pending = nil }
+            }
         }
     }
 

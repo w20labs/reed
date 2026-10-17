@@ -171,24 +171,11 @@ final class TextInjector {
         return range
     }
 
+    /// Untrusted, macOS discards a synthesized ⌘V, so the clipboard is the
+    /// delivery and is never restored over; trusted, it is a vehicle and the
+    /// user's clipboard comes back (see `ClipboardRestorer`).
     private func pasteViaClipboard(_ text: String) {
-        let pb = NSPasteboard.general
-
-        // Untrusted: macOS will discard the synthesized ⌘V, so the clipboard
-        // is the delivery, not a vehicle — set it and never restore over it
-        // (the restore would erase the user's only copy of the dictation).
-        guard AXIsProcessTrusted() else {
-            pb.clearContents()
-            pb.setString(text, forType: .string)
-            ilog.info("AX untrusted: dictation left on the clipboard, no ⌘V")
-            return
-        }
-
-        // Snapshot the clipboard, paste, then put it back while it still
-        // holds the dictation (see `ClipboardRestorer`).
-        let paste = restorer.begin(text, on: pb)
-        synthesizeCommandV()
-        restorer.scheduleRestore(paste) { delay, check in
+        restorer.deliver(text, on: .general, trusted: AXIsProcessTrusted(), pressPaste: synthesizeCommandV) { delay, check in
             DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: check)
         }
     }

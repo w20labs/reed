@@ -98,3 +98,70 @@ final class ClipboardRestorerTests: XCTestCase {
         XCTAssertTrue(board.pasteboardItems?.isEmpty ?? true)
     }
 }
+
+/// Siblings of the PR #30 review: every paste that begins while Reed's own
+/// text is on the clipboard, through the production `deliver` seam.
+final class ClipboardRestorerSupersedeTests: XCTestCase {
+    private var board: NSPasteboard!
+    private var checks: [() -> Void] = []
+    private let restorer = ClipboardRestorer()
+
+    override func setUp() {
+        board = NSPasteboard(name: .init("reed-tests-\(UUID().uuidString)"))
+        board.clearContents()
+        board.setString("original copy", forType: .string)
+    }
+
+    override func tearDown() { board.releaseGlobally() }
+
+    /// One trusted paste through `deliver`; returns its checks.
+    private func paste(_ text: String) -> [() -> Void] {
+        var pressed = false
+        let first = checks.count
+        restorer.deliver(text, on: board, trusted: true, pressPaste: {
+            pressed = true
+            XCTAssertEqual(self.board.string(forType: .string), text, "⌘V is pressed with the dictation on the clipboard")
+        }) { _, check in checks.append(check) }
+        XCTAssertTrue(pressed)
+        return Array(checks[first...])
+    }
+
+    func testThreeRapidPastesRestoreTheOriginal() {
+        let one = paste("one"), two = paste("two"), three = paste("three")
+        (one + two + three).forEach { $0() }
+        XCTAssertEqual(board.string(forType: .string), "original copy")
+    }
+
+    func testACopyBetweenRapidPastesIsWhatComesBack() {
+        let one = paste("one")
+        board.clearContents()
+        board.setString("copied between", forType: .string)
+        let two = paste("two")
+        (one + two).forEach { $0() }
+        XCTAssertEqual(board.string(forType: .string), "copied between")
+    }
+
+    func testAPasteAfterTheWindowSnapshotsTheClipboardAsItIs() {
+        paste("one").forEach { $0() }
+        // The window is over; the user copies text equal to the dictation.
+        board.clearContents()
+        board.setString("one", forType: .string)
+        paste("two").forEach { $0() }
+        XCTAssertEqual(board.string(forType: .string), "one", "a copy after the window is the user's, not Reed's")
+    }
+
+    func testAnUntrustedDeliveryCancelsEveryPendingRestore() {
+        let one = paste("same")
+        restorer.deliver("same", on: board, trusted: false, pressPaste: { XCTFail("no ⌘V untrusted") }) { _, _ in
+            XCTFail("an untrusted delivery schedules no restore")
+        }
+        one.forEach { $0() }
+        XCTAssertEqual(board.string(forType: .string), "same")
+    }
+
+    func testAPasteAfterAnUntrustedDeliveryKeepsTheDelivery() {
+        restorer.deliver("delivered", on: board, trusted: false, pressPaste: {}) { _, _ in }
+        paste("next").forEach { $0() }
+        XCTAssertEqual(board.string(forType: .string), "delivered", "the untrusted delivery is the user's only copy")
+    }
+}
